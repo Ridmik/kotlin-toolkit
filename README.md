@@ -1,7 +1,9 @@
 # Readium Kotlin Toolkit
 
 ## Ho to Setup for Jitpack.io?
-* Modify library
+* Implement features, test them on test-app
+* Use sdkman to install java 17 to match jitpack.io environment exactly
+* In the settings, comment out the test modules as they are failing in jitpack io
 * run `./gradlew clean -Pgroup=com.github.Ridmik -Pversion=3.1.1 -xtest -xlint assemble publishToMavenLocal` . If error, repair error
 * Change tag pom.version=x.y.z
 * commit, and create same tag x.y.z

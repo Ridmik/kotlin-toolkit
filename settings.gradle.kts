@@ -94,9 +94,7 @@ include(":readium:streamer")
 project(":readium:streamer")
     .name = "readium-streamer"
 
-val isJitpackBuild = System.getenv("JITPACK") == "true"
-
-if (isJitpackBuild) {
-    include("test-app")
-    include(":demos:navigator")
-}
+/*
+include("test-app")
+include(":demos:navigator")
+*/
