@@ -1,5 +1,13 @@
 # Readium Kotlin Toolkit
 
+## Ho to Setup for Jitpack.io?
+* Modify library
+* run `./gradlew clean -Pgroup=com.github.Ridmik -Pversion=3.1.1 -xtest -xlint assemble publishToMavenLocal` . If error, repair error
+* Change tag pom.version=x.y.z
+* commit, and create same tag x.y.z
+* Jitpack should now publish the library
+
+## Rest of the readme
 [Readium Mobile](https://github.com/readium/mobile) is a toolkit for ebooks, audiobooks and comics written in Swift & Kotlin.
 
 :point_up: **Take a look at the [guide to quickly get started](docs/guides/getting-started.md).** A [Test App](test-app) demonstrates how to integrate the Readium Kotlin toolkit in your own reading app.

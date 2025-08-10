@@ -68,6 +68,8 @@ dependencies {
 
     implementation(libs.kotlin.stdlib)
 
+    // implementation("com.github.Ridmik:kotlin-toolkit:3.1.1")
+
     implementation(project(":readium:readium-shared"))
     implementation(project(":readium:readium-streamer"))
     implementation(project(":readium:readium-navigator"))
@@ -79,6 +81,7 @@ dependencies {
     implementation(project(":readium:readium-lcp"))
     // Only required if you want to support PDF files using PDFium.
     implementation(project(":readium:adapters:pdfium"))
+
 
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.appcompat)

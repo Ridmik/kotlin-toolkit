@@ -12,6 +12,7 @@ dependencyResolutionManagement {
         mavenCentral()
         maven(url = "https://s3.amazonaws.com/repo.commonsware.com")
         maven(url = "https://customers.pspdfkit.com/maven")
+        maven { url = uri("https://jitpack.io") }
     }
 }
 
@@ -93,5 +94,9 @@ include(":readium:streamer")
 project(":readium:streamer")
     .name = "readium-streamer"
 
-include("test-app")
-include(":demos:navigator")
+val isJitpackBuild = System.getenv("JITPACK") == "true"
+
+if (isJitpackBuild) {
+    include("test-app")
+    include(":demos:navigator")
+}
