@@ -73,6 +73,7 @@ mavenPublishing {
                 url.set("https://github.com/readium/kotlin-toolkit/blob/main/LICENSE")
             }
         }
+        /*
         developers {
             developer {
                 id.set("aferditamuriqi")
@@ -91,12 +92,13 @@ mavenPublishing {
             }
         }
         scm {
-            url.set("https://github.com/readium/kotlin-toolkit")
-            connection.set("scm:git:github.com/readium/kotlin-toolkit.git")
-            developerConnection.set("scm:git:ssh://github.com/readium/kotlin-toolkit.git")
+            url.set("https://github.com/ridmik/kotlin-toolkit")
+            connection.set("scm:git:github.com/ridmik/kotlin-toolkit.git")
+            developerConnection.set("scm:git:ssh://github.com/ridmik/kotlin-toolkit.git")
         }
+        */
     }
 
-    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
-    signAllPublications()
+    // publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+    // signAllPublications()
 }
