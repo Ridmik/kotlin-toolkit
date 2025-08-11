@@ -39,7 +39,9 @@ import kotlinx.coroutines.launch
 import org.readium.r2.navigator.R
 import org.readium.r2.navigator.R2BasicWebView
 import org.readium.r2.navigator.R2WebView
+import org.readium.r2.navigator.BuildConfig.DEBUG
 import org.readium.r2.navigator.databinding.ReadiumNavigatorViewpagerFragmentEpubBinding
+import timber.log.Timber
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
 import org.readium.r2.navigator.epub.EpubNavigatorViewModel
 import org.readium.r2.navigator.extensions.htmlId
@@ -175,6 +177,9 @@ internal class R2EpubPageFragment : Fragment() {
         webView.addJavascriptInterface(webView, "Android")
 
         var endReached = false
+        var topReached = false
+        var bottomReached = false
+        
         webView.setOnOverScrolledCallback(object : R2BasicWebView.OnOverScrolledCallback {
             override fun onOverScrolled(
                 scrollX: Int,
@@ -185,6 +190,26 @@ internal class R2EpubPageFragment : Fragment() {
                 activity ?: return
                 val metrics = DisplayMetrics()
 
+                // Check if we're at the top or bottom of the content
+                val isAtTop = scrollY <= 0
+                val isAtBottom = scrollY >= webView.contentHeight - webView.height
+
+                // Update top/bottom reached states
+                if (isAtTop && !topReached) {
+                    topReached = true
+                    if (DEBUG) Timber.d("Reached top of page")
+                } else if (!isAtTop && topReached) {
+                    topReached = false
+                }
+
+                if (isAtBottom && !bottomReached) {
+                    bottomReached = true
+                    if (DEBUG) Timber.d("Reached bottom of page")
+                } else if (!isAtBottom && bottomReached) {
+                    bottomReached = false
+                }
+
+                // Legacy end reached logic for backward compatibility
                 val topDecile = webView.contentHeight - 1.15 * metrics.heightPixels
                 val bottomDecile = (webView.contentHeight - metrics.heightPixels).toDouble()
 
@@ -224,9 +249,10 @@ internal class R2EpubPageFragment : Fragment() {
                     webView.listener?.onResourceLoaded(webView, it)
                 }
 
-                webView.onContentReady {
-                    onLoadPage()
-                }
+                        webView.onContentReady {
+            onLoadPage()
+            setupVerticalNavigation()
+        }
             }
 
             override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? =
@@ -377,6 +403,22 @@ internal class R2EpubPageFragment : Fragment() {
 
                 containerView.setPadding(0, top, 0, bottom)
             }
+        }
+    }
+
+    private fun setupVerticalNavigation() {
+        webView?.let { webView ->
+            webView.setOnVerticalNavigationListener(object : R2BasicWebView.OnVerticalNavigationListener {
+                override fun onNavigateToPreviousChapter() {
+                    if (DEBUG) Timber.d("Navigating to previous chapter")
+                    webView.listener?.goToPreviousResource(jump = true, animated = true)
+                }
+
+                override fun onNavigateToNextChapter() {
+                    if (DEBUG) Timber.d("Navigating to next chapter")
+                    webView.listener?.goToNextResource(jump = true, animated = true)
+                }
+            })
         }
     }
 

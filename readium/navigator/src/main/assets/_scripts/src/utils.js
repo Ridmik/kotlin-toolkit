@@ -207,6 +207,22 @@ export function scrollRight() {
   return scrollToOffset(Math.min(offset, maxOffset));
 }
 
+// Returns false if the page is already at the top-most scroll offset.
+export function scrollTop() {
+  var documentHeight = document.scrollingElement.scrollHeight;
+  var offset = window.scrollY - window.innerHeight;
+  var minOffset = 0;
+  return scrollToVerticalOffset(Math.max(offset, minOffset));
+}
+
+// Returns false if the page is already at the bottom-most scroll offset.
+export function scrollBottom() {
+  var documentHeight = document.scrollingElement.scrollHeight;
+  var offset = window.scrollY + window.innerHeight;
+  var maxOffset = documentHeight - window.innerHeight;
+  return scrollToVerticalOffset(Math.min(offset, maxOffset));
+}
+
 // Scrolls to the given left offset.
 // Returns false if the page scroll position is already close enough to the given offset.
 function scrollToOffset(offset) {
@@ -219,6 +235,21 @@ function scrollToOffset(offset) {
   document.scrollingElement.scrollLeft = snapOffset(offset);
   // In some case the scrollX cannot reach the position respecting to innerWidth
   var diff = Math.abs(currentOffset - offset) / pageWidth;
+  return diff > 0.01;
+}
+
+// Scrolls to the given vertical offset.
+// Returns false if the page scroll position is already close enough to the given offset.
+function scrollToVerticalOffset(offset) {
+  //        Android.log("scrollToVerticalOffset " + offset);
+  if (isScrollModeEnabled()) {
+    throw "Called scrollToVerticalOffset() with scroll mode enabled. This can only be used in paginated mode.";
+  }
+
+  var currentOffset = window.scrollY;
+  document.scrollingElement.scrollTop = offset;
+  // In some case the scrollY cannot reach the position respecting to innerHeight
+  var diff = Math.abs(currentOffset - offset) / window.innerHeight;
   return diff > 0.01;
 }
 

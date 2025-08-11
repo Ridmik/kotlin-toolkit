@@ -66,6 +66,18 @@ internal class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView
         }
     }
 
+    override fun scrollTop(animated: Boolean) {
+        super.scrollTop(animated)
+        // For vertical scrolling, we don't need to track page changes like horizontal scrolling
+        // The page change is handled by the listener in the base class
+    }
+
+    override fun scrollBottom(animated: Boolean) {
+        super.scrollBottom(animated)
+        // For vertical scrolling, we don't need to track page changes like horizontal scrolling
+        // The page change is handled by the listener in the base class
+    }
+
     private val MAX_SETTLE_DURATION = 600 // ms
     private val MIN_DISTANCE_FOR_FLING = 25 // dips
     private val MIN_FLING_VELOCITY = 400 // dips
@@ -760,24 +772,55 @@ internal class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView
                             }
                         }
                     } else {
-                        val velocity = getCurrentXVelocity() ?: 0
-                        val totalDelta = (x - mInitialMotionX).toInt()
-                        val targetPage = determineTargetPage(
-                            currentPage = mCurItem,
-                            initialVelocity = mInitialVelocity ?: 0,
-                            currentVelocity = velocity,
-                            deltaX = totalDelta
-                        )
+                        // Check for vertical overscroll first
+                        val verticalOverscroll = getVerticalOverscrollMode()
+                        val totalDeltaY = (y - mInitialMotionY).toInt()
+                        
+                        if (abs(totalDeltaY) > abs(x - mInitialMotionX) && abs(totalDeltaY) > mTouchSlop) {
+                            // Vertical scrolling detected
+                            when (verticalOverscroll) {
+                                OverscrollMode.BOTH -> {
+                                    if (mInitialMotionY < y) {
+                                        scrollBottom(animated = true)
+                                    } else if (mInitialMotionY > y) {
+                                        scrollTop(animated = true)
+                                    }
+                                }
+                                OverscrollMode.LEFT -> { // TOP in vertical context
+                                    if (mInitialMotionY > y) {
+                                        scrollTop(animated = true)
+                                    }
+                                }
+                                OverscrollMode.RIGHT -> { // BOTTOM in vertical context
+                                    if (mInitialMotionY < y) {
+                                        scrollBottom(animated = true)
+                                    }
+                                }
+                                else -> {
+                                    // No vertical overscroll, continue with horizontal logic
+                                }
+                            }
+                        } else {
+                            // Horizontal scrolling logic (existing code)
+                            val velocity = getCurrentXVelocity() ?: 0
+                            val totalDelta = (x - mInitialMotionX).toInt()
+                            val targetPage = determineTargetPage(
+                                currentPage = mCurItem,
+                                initialVelocity = mInitialVelocity ?: 0,
+                                currentVelocity = velocity,
+                                deltaX = totalDelta
+                            )
 
-                        when {
-                            targetPage < 0 -> {
-                                scrollLeft(animated = true)
-                            }
-                            targetPage >= numPages -> {
-                                scrollRight(animated = true)
-                            }
-                            else -> {
-                                setCurrentItemInternal(targetPage, true, velocity)
+                            when {
+                                targetPage < 0 -> {
+                                    scrollLeft(animated = true)
+                                }
+                                targetPage >= numPages -> {
+                                    scrollRight(animated = true)
+                                }
+                                else -> {
+                                    setCurrentItemInternal(targetPage, true, velocity)
+                                }
                             }
                         }
                     }
@@ -1072,6 +1115,21 @@ internal class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView
             return OverscrollMode.LEFT
         } else if (right) {
             return OverscrollMode.RIGHT
+        } else {
+            return OverscrollMode.NONE
+        }
+    }
+
+    private fun getVerticalOverscrollMode(): OverscrollMode {
+        val clientHeight = computeVerticalScrollExtent()
+        val bottom = scrollY >= computeVerticalScrollRange() - clientHeight
+        val top = scrollY <= 0
+        if (top && bottom) {
+            return OverscrollMode.BOTH
+        } else if (top) {
+            return OverscrollMode.LEFT // Using LEFT to represent TOP in vertical context
+        } else if (bottom) {
+            return OverscrollMode.RIGHT // Using RIGHT to represent BOTTOM in vertical context
         } else {
             return OverscrollMode.NONE
         }

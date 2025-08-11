@@ -120,6 +120,7 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
     var disablePageTurnsWhileScrolling: Boolean = false
 
     var callback: OnOverScrolledCallback? = null
+    var verticalNavigationListener: OnVerticalNavigationListener? = null
 
     private val uiScope = CoroutineScope(Dispatchers.Main)
 
@@ -183,8 +184,17 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
         fun onOverScrolled(scrollX: Int, scrollY: Int, clampedX: Boolean, clampedY: Boolean)
     }
 
+    interface OnVerticalNavigationListener {
+        fun onNavigateToPreviousChapter()
+        fun onNavigateToNextChapter()
+    }
+
     fun setOnOverScrolledCallback(callback: OnOverScrolledCallback) {
         this.callback = callback
+    }
+
+    fun setOnVerticalNavigationListener(listener: OnVerticalNavigationListener) {
+        this.verticalNavigationListener = listener
     }
 
     override fun onOverScrolled(scrollX: Int, scrollY: Int, clampedX: Boolean, clampedY: Boolean) {
@@ -193,6 +203,29 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
         // See https://github.com/readium/kotlin-toolkit/issues/325
         if (isSelecting) {
             return
+        }
+
+        // Handle vertical overscroll for page navigation
+        if (clampedY) {
+            if (scrollMode) {
+                // In scroll mode, handle chapter navigation
+                if (scrollY <= 0) {
+                    // Scrolled to top, go to previous chapter
+                    verticalNavigationListener?.onNavigateToPreviousChapter()
+                } else if (scrollY >= computeVerticalScrollRange() - computeVerticalScrollExtent()) {
+                    // Scrolled to bottom, go to next chapter
+                    verticalNavigationListener?.onNavigateToNextChapter()
+                }
+            } else {
+                // In paginated mode, handle page navigation
+                if (scrollY <= 0) {
+                    // Scrolled to top, go to previous page
+                    scrollTop(animated = true)
+                } else if (scrollY >= computeVerticalScrollRange() - computeVerticalScrollExtent()) {
+                    // Scrolled to bottom, go to next page
+                    scrollBottom(animated = true)
+                }
+            }
         }
 
         if (callback != null) {
@@ -276,6 +309,66 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
                     runJavaScript("readium.scrollLeft();") { success ->
                         if (!success.toBoolean()) {
                             goLeft(jump = false)
+                        }
+                    }
+            }
+        }
+    }
+
+    open fun scrollTop(animated: Boolean = false) {
+        uiScope.launch {
+            val listener = listener ?: return@launch
+
+            fun goTop(jump: Boolean) {
+                // For vertical scrolling, we go to the previous resource when scrolling up
+                listener.goBackward(animated = animated) // Legacy
+                listener.goToPreviousResource(jump = jump, animated = animated)
+            }
+
+            when {
+                // If the user is in scrollMode and has disabled swipe pagination, do nothing.
+                scrollMode && this@R2BasicWebView.disablePageTurnsWhileScrolling -> {}
+
+                scrollMode ->
+                    goTop(jump = true)
+
+                !this@R2BasicWebView.canScrollVertically(-1) ->
+                    goTop(jump = false)
+
+                else ->
+                    runJavaScript("readium.scrollTop();") { success ->
+                        if (!success.toBoolean()) {
+                            goTop(jump = false)
+                        }
+                    }
+            }
+        }
+    }
+
+    open fun scrollBottom(animated: Boolean = false) {
+        uiScope.launch {
+            val listener = listener ?: return@launch
+
+            fun goBottom(jump: Boolean) {
+                // For vertical scrolling, we go to the next resource when scrolling down
+                listener.goForward(animated = animated) // Legacy
+                listener.goToNextResource(jump = jump, animated = animated)
+            }
+
+            when {
+                // If the user is in scrollMode and has disabled swipe pagination, do nothing.
+                scrollMode && this@R2BasicWebView.disablePageTurnsWhileScrolling -> {}
+
+                scrollMode ->
+                    goBottom(jump = true)
+
+                !this@R2BasicWebView.canScrollVertically(1) ->
+                    goBottom(jump = false)
+
+                else ->
+                    runJavaScript("readium.scrollBottom();") { success ->
+                        if (!success.toBoolean()) {
+                            goBottom(jump = false)
                         }
                     }
             }
@@ -484,6 +577,9 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
 
     @android.webkit.JavascriptInterface
     fun getViewportWidth(): Int = width
+
+    @android.webkit.JavascriptInterface
+    fun getViewportHeight(): Int = height
 
     @android.webkit.JavascriptInterface
     fun logError(message: String, filename: String, line: Int) {
