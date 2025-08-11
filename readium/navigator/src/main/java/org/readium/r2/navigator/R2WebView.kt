@@ -757,6 +757,8 @@ internal class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView
                     val y = ev.safeGetY(activePointerIndex)
 
                     if (scrollMode) {
+                        // In scroll mode, let the onOverScrolled method handle vertical navigation
+                        // Only handle horizontal navigation here if needed
                         val totalDelta = (y - mInitialMotionY).toInt()
                         if (abs(totalDelta) < 200) {
                             if (mInitialOverscroll == OverscrollMode.BOTH) {

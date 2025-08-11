@@ -121,6 +121,10 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
 
     var callback: OnOverScrolledCallback? = null
     var verticalNavigationListener: OnVerticalNavigationListener? = null
+    
+    // Debounce mechanism for vertical navigation
+    private var lastVerticalNavigationTime = 0L
+    private val verticalNavigationDebounceMs = 500L // 500ms debounce
 
     private val uiScope = CoroutineScope(Dispatchers.Main)
 
@@ -209,11 +213,24 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
         if (clampedY) {
             if (scrollMode) {
                 // In scroll mode, handle chapter navigation
-                if (scrollY <= 0) {
+                // Add a small threshold to prevent accidental triggers
+                val threshold = 50 // pixels
+                val currentTime = System.currentTimeMillis()
+                
+                if (scrollY <= threshold && currentTime - lastVerticalNavigationTime > verticalNavigationDebounceMs) {
                     // Scrolled to top, go to previous chapter
+                    lastVerticalNavigationTime = currentTime
+                    if (BuildConfig.DEBUG) {
+                        android.util.Log.d("R2BasicWebView", "Triggering previous chapter navigation (scrollY: $scrollY, threshold: $threshold)")
+                    }
                     verticalNavigationListener?.onNavigateToPreviousChapter()
-                } else if (scrollY >= computeVerticalScrollRange() - computeVerticalScrollExtent()) {
+                } else if (scrollY >= computeVerticalScrollRange() - computeVerticalScrollExtent() - threshold && 
+                          currentTime - lastVerticalNavigationTime > verticalNavigationDebounceMs) {
                     // Scrolled to bottom, go to next chapter
+                    lastVerticalNavigationTime = currentTime
+                    if (BuildConfig.DEBUG) {
+                        android.util.Log.d("R2BasicWebView", "Triggering next chapter navigation (scrollY: $scrollY, maxScroll: ${computeVerticalScrollRange() - computeVerticalScrollExtent()})")
+                    }
                     verticalNavigationListener?.onNavigateToNextChapter()
                 }
             } else {
