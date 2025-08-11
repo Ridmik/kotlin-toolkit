@@ -1,5 +1,7 @@
 # Readium Kotlin Toolkit
 
+[![](https://jitpack.io/v/Ridmik/kotlin-toolkit.svg)](https://jitpack.io/#Ridmik/kotlin-toolkit)
+
 ## Ho to Setup for Jitpack.io?
 * Implement features, test them on test-app
 * Use sdkman to install java 17 to match jitpack.io environment exactly
@@ -8,7 +10,27 @@
 * Change tag pom.version=x.y.z
 * commit, and create same tag x.y.z
 * Jitpack should now publish the library
+* Add the dependencies:
+```kotlin
+dependencies {
+    val sdkVersion = "x.y.z"
+    // add all of them in 1 line,
+    implementation("com.github.Ridmik:kotlin-toolkit:$sdkVersion") 
 
+    // or add individual packages as you need below
+    implementation("com.github.Ridmik.kotlin-toolkit:readium-shared:$sdkVersion")
+    implementation("com.github.Ridmik.kotlin-toolkit:readium-streamer:$sdkVersion")
+    implementation("com.github.Ridmik.kotlin-toolkit:readium-navigator:$sdkVersion")
+    implementation("com.github.Ridmik.kotlin-toolkit:readium-navigator-media-audio:$sdkVersion")
+    implementation("com.github.Ridmik.kotlin-toolkit:readium-navigator-media-tts:$sdkVersion")
+    // Only required if you want to support audiobooks using ExoPlayer.
+    implementation("com.github.Ridmik.kotlin-toolkit:readium-adapter-exoplayer:$sdkVersion")
+    implementation("com.github.Ridmik.kotlin-toolkit:readium-opds:$sdkVersion")
+    implementation("com.github.Ridmik.kotlin-toolkit:readium-lcp:$sdkVersion")
+    // Only required if you want to support PDF files using PDFium.
+    implementation("com.github.Ridmik.kotlin-toolkit:readium-adapter-pdfium:$sdkVersion")
+}
+```
 ## Rest of the readme
 [Readium Mobile](https://github.com/readium/mobile) is a toolkit for ebooks, audiobooks and comics written in Swift & Kotlin.
 

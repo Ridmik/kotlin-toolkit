@@ -68,7 +68,21 @@ dependencies {
 
     implementation(libs.kotlin.stdlib)
 
-    // implementation("com.github.Ridmik:kotlin-toolkit:3.1.1")
+    /*
+    val sdkVersion = "x.y.z"
+    // implementation("com.github.Ridmik:kotlin-toolkit:$sdkVersion") // add all of them in 1 line, or add individual packages as you need below
+    implementation("com.github.Ridmik.kotlin-toolkit:readium-shared:$sdkVersion")
+    implementation("com.github.Ridmik.kotlin-toolkit:readium-streamer:$sdkVersion")
+    implementation("com.github.Ridmik.kotlin-toolkit:readium-navigator:$sdkVersion")
+    implementation("com.github.Ridmik.kotlin-toolkit:readium-navigator-media-audio:$sdkVersion")
+    implementation("com.github.Ridmik.kotlin-toolkit:readium-navigator-media-tts:$sdkVersion")
+    // Only required if you want to support audiobooks using ExoPlayer.
+    implementation("com.github.Ridmik.kotlin-toolkit:readium-adapter-exoplayer:$sdkVersion")
+    implementation("com.github.Ridmik.kotlin-toolkit:readium-opds:$sdkVersion")
+    implementation("com.github.Ridmik.kotlin-toolkit:readium-lcp:$sdkVersion")
+    // Only required if you want to support PDF files using PDFium.
+    implementation("com.github.Ridmik.kotlin-toolkit:readium-adapter-pdfium:$sdkVersion")
+    */
 
     implementation(project(":readium:readium-shared"))
     implementation(project(":readium:readium-streamer"))
@@ -114,4 +128,10 @@ dependencies {
     // Room database
     implementation(libs.bundles.room)
     ksp(libs.androidx.room.compiler)
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
 }

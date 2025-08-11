@@ -4,8 +4,8 @@
 echo "Cleaning previous builds and caches..."
 ./gradlew clean
 
-echo "Cleaning up ~/.gradle/caches/build-cache-1"
-rm -rf ~/.gradle/caches/build-cache-1
+echo "Cleaning up ~/.gradle"
+rm -rf ~/.gradle
 
 # remove build folder if needed
 echo "Force deleting build folders..."
