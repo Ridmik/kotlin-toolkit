@@ -53,6 +53,8 @@ import timber.log.Timber
 @OptIn(ExperimentalReadiumApi::class)
 internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebView(context, attrs) {
 
+    // TODO: This listener is implemented by the navigator fragments (e.g., R2EpubPageFragment).
+    // It's the key to navigating between resources (chapters).
     interface Listener {
         val readingProgression: ReadingProgression
         val verticalText: Boolean
@@ -71,6 +73,8 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
         fun onKey(event: KeyEvent): Boolean = false
         fun onDecorationActivated(id: DecorationId, group: String, rect: RectF, point: PointF): Boolean = false
         fun onProgressionChanged() {}
+        // TODO: These methods are the core of the navigation between resources.
+        // They are called when the user swipes to the next or previous page at the boundary of a resource.
         fun goForward(animated: Boolean = false): Boolean = false
         fun goBackward(animated: Boolean = false): Boolean = false
 
@@ -101,10 +105,19 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
          * for scroll mode.
          */
         @InternalReadiumApi
+        // TODO: This is where the actual navigation to the next chapter happens.
         fun goToNextResource(jump: Boolean, animated: Boolean): Boolean = false
 
+        /**
+         * Requests to load the previous resource in the reading order.
+         *
+         * @param jump Indicates whether it's a discontinuous jump from the current locator. Used
+         * for scroll mode.
+         * @param atEnd Indicates whether to open the resource at the end instead of the beginning.
+         */
         @InternalReadiumApi
-        fun goToPreviousResource(jump: Boolean, animated: Boolean): Boolean = false
+        // TODO: This is where the actual navigation to the previous chapter happens.
+        fun goToPreviousResource(jump: Boolean, animated: Boolean, atEnd: Boolean = false): Boolean = false
     }
 
     var listener: Listener? = null
@@ -223,7 +236,8 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
                     if (BuildConfig.DEBUG) {
                         android.util.Log.d("R2BasicWebView", "Triggering previous chapter navigation (scrollY: $scrollY, threshold: $threshold)")
                     }
-                    verticalNavigationListener?.onNavigateToPreviousChapter()
+                    // verticalNavigationListener?.onNavigateToPreviousChapter()
+                    scrollTop(animated = true)
                 } else if (scrollY >= computeVerticalScrollRange() - computeVerticalScrollExtent() - threshold && 
                           currentTime - lastVerticalNavigationTime > verticalNavigationDebounceMs) {
                     // Scrolled to bottom, go to next chapter
@@ -231,7 +245,8 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
                     if (BuildConfig.DEBUG) {
                         android.util.Log.d("R2BasicWebView", "Triggering next chapter navigation (scrollY: $scrollY, maxScroll: ${computeVerticalScrollRange() - computeVerticalScrollExtent()})")
                     }
-                    verticalNavigationListener?.onNavigateToNextChapter()
+                    // verticalNavigationListener?.onNavigateToNextChapter()
+                    scrollBottom(animated = true)
                 }
             } else {
                 // In paginated mode, handle page navigation
@@ -268,10 +283,13 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
         uiScope.launch {
             val listener = listener ?: return@launch
 
+            // TODO: This function handles the logic for moving to the right.
+            // In LTR progression, it goes to the next resource.
+            // In RTL progression, it goes to the previous resource.
             fun goRight(jump: Boolean) {
                 if (listener.readingProgression == ReadingProgression.RTL) {
                     listener.goBackward(animated = animated) // Legacy
-                    listener.goToPreviousResource(jump = jump, animated = animated)
+                    listener.goToPreviousResource(jump = jump, animated = animated, atEnd = false)
                 } else {
                     listener.goForward(animated = animated) // Legacy
                     listener.goToNextResource(jump = jump, animated = animated)
@@ -302,13 +320,16 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
         uiScope.launch {
             val listener = listener ?: return@launch
 
+            // TODO: This function handles the logic for moving to the left.
+            // In LTR progression, it goes to the previous resource.
+            // In RTL progression, it goes to the next resource.
             fun goLeft(jump: Boolean) {
                 if (listener.readingProgression == ReadingProgression.RTL) {
                     listener.goForward(animated = animated) // legacy
                     listener.goToNextResource(jump = jump, animated = animated)
                 } else {
                     listener.goBackward(animated = animated) // legacy
-                    listener.goToPreviousResource(jump = jump, animated = animated)
+                    listener.goToPreviousResource(jump = jump, animated = animated, atEnd = false)
                 }
             }
 
@@ -336,10 +357,14 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
         uiScope.launch {
             val listener = listener ?: return@launch
 
+            // TODO: This function handles the logic for scrolling to the top.
+            // This usually means navigating to the previous resource.
             fun goTop(jump: Boolean) {
                 // For vertical scrolling, we go to the previous resource when scrolling up
                 listener.goBackward(animated = animated) // Legacy
-                listener.goToPreviousResource(jump = jump, animated = animated)
+                // By setting atEnd = true, we ask the navigator to load the previous resource
+                // at its end, effectively showing the last page.
+                listener.goToPreviousResource(jump = false, animated = animated, atEnd = true)
             }
 
             when {
@@ -366,6 +391,8 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
         uiScope.launch {
             val listener = listener ?: return@launch
 
+            // TODO: This function handles the logic for scrolling to the bottom.
+            // This usually means navigating to the next resource.
             fun goBottom(jump: Boolean) {
                 // For vertical scrolling, we go to the next resource when scrolling down
                 listener.goForward(animated = animated) // Legacy

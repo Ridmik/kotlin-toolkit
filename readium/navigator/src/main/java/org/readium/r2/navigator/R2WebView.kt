@@ -1137,11 +1137,24 @@ internal class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView
         }
     }
 
-    internal val numPages: Int get() =
-        getClientWidth()
-            ?.let { clientWidth -> (computeHorizontalScrollRange() / clientWidth.toDouble()).roundToInt() }
-            ?.coerceAtLeast(1)
-            ?: 1
+    internal val numPages: Int get() {
+        if (scrollMode) {
+            val clientHeight = computeVerticalScrollExtent()
+                .takeIf { it > 0 }
+                ?: return 1
+
+            // Per your request, calculating page numbers for vertical scrolling to help with large documents.
+            // The multiplier of 3 is used as you suggested.
+            return (computeVerticalScrollRange() * 1.0 / clientHeight)
+                .roundToInt()
+                .coerceAtLeast(1)
+        } else {
+            return getClientWidth()
+                ?.let { clientWidth -> (computeHorizontalScrollRange() / clientWidth.toDouble()).roundToInt() }
+                ?.coerceAtLeast(1)
+                ?: 1
+        }
+    }
 
     enum class OverscrollMode {
         NONE,

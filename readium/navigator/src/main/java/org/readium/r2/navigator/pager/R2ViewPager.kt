@@ -47,6 +47,7 @@ internal class R2ViewPager : R2RTLViewPager {
     private fun initVertical() {
         overScrollMode = OVER_SCROLL_NEVER
         setPageTransformer(true, VerticalPageTransformer())
+        offscreenPageLimit = 0
     }
 
     private fun swapXY(ev: MotionEvent): MotionEvent {

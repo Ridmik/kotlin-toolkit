@@ -832,7 +832,7 @@ public class EpubNavigatorFragment internal constructor(
             notifyCurrentLocation()
         }
 
-        override fun goToPreviousResource(jump: Boolean, animated: Boolean): Boolean {
+        override fun goToPreviousResource(jump: Boolean, animated: Boolean, atEnd: Boolean): Boolean {
             return this@EpubNavigatorFragment.goToPreviousResource(jump = jump, animated = animated)
         }
 
@@ -940,6 +940,7 @@ public class EpubNavigatorFragment internal constructor(
                 webView.setCurrentItem(0, false)
             } else {
                 webView.setCurrentItem(webView.numPages - 1, false)
+                webView.scrollToEnd() // looks like large html files can't scroll to bottom
             }
         }
 
