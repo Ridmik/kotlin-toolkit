@@ -188,7 +188,19 @@ internal class R2EpubPageFragment : Fragment() {
                 when {
                     scrollY == 0 -> {
                         Timber.tag("WebViewFling").d("Fling at TOP")
-                        onFlingNavigationCallBack.loadPrevious()
+                        // 2 cases:
+                        // 1 small content
+                        if(viewHeight == contentHeight) {
+                            if(diffY > 0) {
+                                onFlingNavigationCallBack.loadPrevious()
+                            } else {
+                                onFlingNavigationCallBack.loadNext()
+                            }
+                        } else {
+                            // 2 large content
+                            onFlingNavigationCallBack.loadPrevious()
+                        }
+
                         return true
                     }
                     scrollY + viewHeight >= contentHeight -> {
