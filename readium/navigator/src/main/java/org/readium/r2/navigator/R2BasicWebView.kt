@@ -201,9 +201,34 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
         super.onOverScrolled(scrollX, scrollY, clampedX, clampedY)
     }
 
+    @Suppress("DEPRECATION")
     override fun onScrollChanged(l: Int, t: Int, oldl: Int, oldt: Int) {
         super.onScrollChanged(l, t, oldl, oldt)
         listener?.onProgressionChanged()
+
+        // Check if at the top
+        val isTop = t == 0
+
+        // Calculate if at the bottom
+        val contentHeight = getContentHeight() // * getScale()
+        val scrollPosition = t + measuredHeight
+
+        // Add a small threshold (e.g., 5 pixels) for floating-point accuracy
+        val isBottom = scrollPosition >= contentHeight
+        val delta = contentHeight - scrollPosition
+
+        // An alternative, more robust check is to use a normalized scroll position
+        // val isBottom = (scrollPosition.toFloat() / contentHeight.toFloat()) >= 0.999f
+
+        Timber.tag("boitoi").i("t = $t, measuredHeight: $measuredHeight, scrollPosition: $scrollPosition, contentHeight = $contentHeight, isBottom: $isBottom, delta: $delta")
+
+        if(isTop) {
+            Timber.tag("boitoi").d("isTop detected...")
+        } else if(isBottom) {
+            Timber.tag("boitoi").i("isBottom detected...")
+        } else {
+            Timber.tag("boitoi").e("isCenter detected...")
+        }
     }
 
     override fun destroy() {
