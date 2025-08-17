@@ -30,6 +30,7 @@ include(":readium:adapters:pdfium:navigator")
 project(":readium:adapters:pdfium:navigator")
     .name = "readium-adapter-pdfium-navigator"
 
+/*
 include(":readium:adapters:pspdfkit:document")
 project(":readium:adapters:pspdfkit:document")
     .name = "readium-adapter-pspdfkit-document"
@@ -37,6 +38,7 @@ project(":readium:adapters:pspdfkit:document")
 include(":readium:adapters:pspdfkit:navigator")
 project(":readium:adapters:pspdfkit:navigator")
     .name = "readium-adapter-pspdfkit-navigator"
+*/
 
 include(":readium:lcp")
 project(":readium:lcp")
