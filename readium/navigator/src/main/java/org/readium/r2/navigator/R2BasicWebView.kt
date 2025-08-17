@@ -107,7 +107,18 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
         fun goToPreviousResource(jump: Boolean, animated: Boolean): Boolean = false
     }
 
-    var listener: Listener? = null
+    private var onFlingGestureListener: OnFlingGestureListener? = null
+    private var mGestureDetector: GestureDetector? = null
+
+    private var _listener: Listener? = null
+
+    var listener: Listener?
+        get() = _listener
+        set(value) {
+            _listener = value
+            onFlingGestureListener = OnFlingGestureListener(_listener)
+            mGestureDetector = GestureDetector(context, onFlingGestureListener!!)
+        }
 
     var resourceUrl: AbsoluteUrl? = null
 
@@ -206,6 +217,10 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
         super.onScrollChanged(l, t, oldl, oldt)
         listener?.onProgressionChanged()
 
+        detectEdgeOnScrollChanged(l, t, oldl, oldt)
+    }
+
+    private fun detectEdgeOnScrollChanged(l: Int, t: Int, oldL: Int, oldT: Int) {
         // Check if at the top
         val isTop = t == 0
 
@@ -229,6 +244,16 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
         } else {
             Timber.tag("boitoi").e("isCenter detected...")
         }
+        onFlingGestureListener?.setTopBottom(isTop = isTop, isBottom = isBottom)
+    }
+
+
+    override fun onTouchEvent(ev: MotionEvent): Boolean {
+        if(onFlingGestureListener?.isAtEdge == true) {
+            mGestureDetector?.onTouchEvent(ev)
+            // return true
+        }
+        return super.onTouchEvent(ev)
     }
 
     override fun destroy() {
