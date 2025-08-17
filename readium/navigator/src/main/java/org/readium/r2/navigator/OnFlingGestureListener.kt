@@ -8,7 +8,9 @@ import org.readium.r2.shared.InternalReadiumApi
 import timber.log.Timber
 
 internal class OnFlingGestureListener(
-    internal var listener: R2BasicWebView.Listener?
+    // @Deprecated("switch to OnFlingNavigationCallBack")
+    // internal var listener: R2BasicWebView.Listener? = null,
+    internal val callBack: OnFlingNavigationCallBack,
 ) : SimpleOnGestureListener() {
 
     private var isAtTop = false
@@ -36,20 +38,16 @@ internal class OnFlingGestureListener(
             if (diffY > 0) {
                 // Swipe down
                 if (isAtTop) {
-                    Timber.tag("Gesture").d("Swipe down detected at the top! ⬇️");
-                    listener?.let { l ->
-                        l.goBackward(true)
-                        l.goToPreviousResource(jump = true, animated = true)
-                    }
+                    Timber.tag("Gesture").d("Swipe down detected at the top! ⬇️")
+
+                    callBack.loadPrevious()
                 }
             } else {
                 // Swipe up
                 if (isAtBottom) {
-                    Timber.tag("Gesture").d("Swipe up detected at the bottom! ⬆️");
-                    listener?.let { l ->
-                        l.goForward(true)
-                        l.goToNextResource(jump = true, animated = true)
-                    }
+                    Timber.tag("Gesture").d("Swipe up detected at the bottom! ⬆️")
+
+                    callBack.loadNext()
                 }
             }
             setTopBottom(isTop = false, isBottom = false)
@@ -64,4 +62,10 @@ internal class OnFlingGestureListener(
         private const val SWIPE_THRESHOLD = 100
         private const val SWIPE_VELOCITY_THRESHOLD = 100
     }
+}
+
+internal interface OnFlingNavigationCallBack {
+    fun loadPrevious()
+    fun loadNext()
+
 }

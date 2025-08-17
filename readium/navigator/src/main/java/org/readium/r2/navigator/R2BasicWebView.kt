@@ -107,18 +107,12 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
         fun goToPreviousResource(jump: Boolean, animated: Boolean): Boolean = false
     }
 
-    private var onFlingGestureListener: OnFlingGestureListener? = null
-    private var mGestureDetector: GestureDetector? = null
+    var onFlingGestureListener: OnFlingGestureListener? = null
+    var mGestureDetector: GestureDetector? = null
 
     private var _listener: Listener? = null
 
-    var listener: Listener?
-        get() = _listener
-        set(value) {
-            _listener = value
-            onFlingGestureListener = OnFlingGestureListener(_listener)
-            mGestureDetector = GestureDetector(context, onFlingGestureListener!!)
-        }
+    var listener: Listener? = null
 
     var resourceUrl: AbsoluteUrl? = null
 

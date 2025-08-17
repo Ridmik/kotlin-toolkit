@@ -36,6 +36,8 @@ import kotlin.coroutines.suspendCoroutine
 import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import org.readium.r2.navigator.OnFlingGestureListener
+import org.readium.r2.navigator.OnFlingNavigationCallBack
 import org.readium.r2.navigator.R
 import org.readium.r2.navigator.R2BasicWebView
 import org.readium.r2.navigator.R2WebView
@@ -124,6 +126,38 @@ internal class R2EpubPageFragment : Fragment() {
             ?.let { textZoom = it }
     }
 
+    private var onFlingGestureListener: OnFlingGestureListener? = null
+    private val onFlingNavigationCallBack: OnFlingNavigationCallBack by lazy {
+        object: OnFlingNavigationCallBack {
+            override fun loadPrevious() {
+                _binding?.top?.visibility = View.VISIBLE
+                _binding?.top?.postDelayed(
+                    {
+                        _binding?.top?.visibility = View.GONE
+
+                        val l = navigator?.webViewListener?:return@postDelayed
+                        l.goBackward(true)
+                        l.goToPreviousResource(jump = true, animated = true)
+                    }, 250
+                )
+            }
+
+            override fun loadNext() {
+                _binding?.bottom?.visibility = View.VISIBLE
+                _binding?.root?.postDelayed({
+                    _binding?.bottom?.visibility = View.GONE
+
+                    val l = navigator?.webViewListener?:return@postDelayed
+                    l.goForward(true)
+                    l.goToNextResource(jump = true, animated = true)
+                }, 250)
+
+
+            }
+        }
+    }
+    private var mGestureDetector: GestureDetector? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         pendingLocator = BundleCompat.getParcelable(
@@ -144,6 +178,15 @@ internal class R2EpubPageFragment : Fragment() {
 
         val webView = binding.webView
         this.webView = webView
+
+        onFlingGestureListener = OnFlingGestureListener(onFlingNavigationCallBack)
+
+        mGestureDetector = GestureDetector(requireContext(), onFlingGestureListener!!)
+
+        webView.mGestureDetector = mGestureDetector
+        webView.onFlingGestureListener = onFlingGestureListener
+
+
 
         webView.visibility = View.INVISIBLE
         navigator?.webViewListener?.let { listener ->
