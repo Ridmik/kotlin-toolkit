@@ -15,6 +15,7 @@ import android.annotation.SuppressLint
 import android.graphics.PointF
 import android.os.Bundle
 import android.util.DisplayMetrics
+import android.util.Log
 import android.view.*
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -33,11 +34,11 @@ import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import kotlin.math.abs
 import kotlin.math.roundToInt
+import kotlin.text.compareTo
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import org.readium.r2.navigator.OnFlingGestureListener
-import org.readium.r2.navigator.OnFlingNavigationCallBack
 import org.readium.r2.navigator.R
 import org.readium.r2.navigator.R2BasicWebView
 import org.readium.r2.navigator.R2WebView
@@ -51,6 +52,7 @@ import org.readium.r2.shared.InternalReadiumApi
 import org.readium.r2.shared.publication.Link
 import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.util.AbsoluteUrl
+import timber.log.Timber
 
 @OptIn(ExperimentalReadiumApi::class)
 internal class R2EpubPageFragment : Fragment() {
@@ -126,7 +128,6 @@ internal class R2EpubPageFragment : Fragment() {
             ?.let { textZoom = it }
     }
 
-    private var onFlingGestureListener: OnFlingGestureListener? = null
     private val onFlingNavigationCallBack: OnFlingNavigationCallBack by lazy {
         object: OnFlingNavigationCallBack {
             override fun loadPrevious() {
@@ -156,7 +157,55 @@ internal class R2EpubPageFragment : Fragment() {
             }
         }
     }
-    private var mGestureDetector: GestureDetector? = null
+
+
+
+    private val mGestureDetector: GestureDetector by lazy {
+        GestureDetector(requireContext(), object :
+            GestureDetector.SimpleOnGestureListener() {
+            override fun onFling(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float
+            ): Boolean {
+                if(webView == null) return false
+
+                val diffY = e2.y - (e1?.y ?:0f)
+
+                if (abs(diffY) < SWIPE_THRESHOLD) {
+                    return false
+                }
+                if(abs(velocityY) < SWIPE_VELOCITY_THRESHOLD) {
+                    return false
+                }
+                // guaranteed powerful fling
+                val webView = webView!!
+                val scrollY = webView.scrollY
+                val contentHeight = (webView.contentHeight)
+                val viewHeight = webView.height
+
+                when {
+                    scrollY == 0 -> {
+                        Timber.tag("WebViewFling").d("Fling at TOP")
+                        onFlingNavigationCallBack.loadPrevious()
+                        return true
+                    }
+                    scrollY + viewHeight >= contentHeight -> {
+                        Timber.tag("WebViewFling").d("Fling at BOTTOM")
+                        onFlingNavigationCallBack.loadNext()
+                        return true
+                    }
+                    else -> {
+                        Timber.tag("WebViewFling").d("Fling somewhere in middle")
+                        return false
+                    }
+                }
+                return super.onFling(e1, e2, velocityX, velocityY)
+            }
+        })
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -179,12 +228,11 @@ internal class R2EpubPageFragment : Fragment() {
         val webView = binding.webView
         this.webView = webView
 
-        onFlingGestureListener = OnFlingGestureListener(onFlingNavigationCallBack)
+        webView.setOnTouchListener { v, event ->
+            mGestureDetector.onTouchEvent(event)
+            false
+        }
 
-        mGestureDetector = GestureDetector(requireContext(), onFlingGestureListener!!)
-
-        webView.mGestureDetector = mGestureDetector
-        webView.onFlingGestureListener = onFlingGestureListener
 
 
 
@@ -532,6 +580,9 @@ internal class R2EpubPageFragment : Fragment() {
     companion object {
         private const val textZoomBundleKey = "org.readium.textZoom"
 
+        private val SWIPE_THRESHOLD = 100
+        private val SWIPE_VELOCITY_THRESHOLD = 100
+
         fun newInstance(
             url: AbsoluteUrl,
             link: Link? = null,
@@ -565,4 +616,9 @@ private fun View.setOnClickListenerWithPoint(action: (View, PointF) -> Unit) {
     setOnClickListener {
         action(it, point)
     }
+}
+
+internal interface OnFlingNavigationCallBack {
+    fun loadPrevious()
+    fun loadNext()
 }
