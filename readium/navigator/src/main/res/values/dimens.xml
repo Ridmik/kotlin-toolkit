@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="readium_navigator_epub_vertical_padding">40dp</dimen>
+    <dimen name="readium_padding_3x">48dp</dimen>
+    <dimen name="readium_padding">16dp</dimen>
 </resources>
