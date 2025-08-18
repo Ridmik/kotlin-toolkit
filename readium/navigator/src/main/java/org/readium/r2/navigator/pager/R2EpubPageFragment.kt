@@ -15,6 +15,7 @@ import android.annotation.SuppressLint
 import android.graphics.PointF
 import android.os.Bundle
 import android.util.DisplayMetrics
+import android.util.Log
 import android.view.*
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -33,7 +34,9 @@ import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import kotlin.math.abs
 import kotlin.math.roundToInt
+import kotlin.text.compareTo
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.readium.r2.navigator.R
@@ -49,6 +52,7 @@ import org.readium.r2.shared.InternalReadiumApi
 import org.readium.r2.shared.publication.Link
 import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.util.AbsoluteUrl
+import timber.log.Timber
 
 @OptIn(ExperimentalReadiumApi::class)
 internal class R2EpubPageFragment : Fragment() {
@@ -124,6 +128,97 @@ internal class R2EpubPageFragment : Fragment() {
             ?.let { textZoom = it }
     }
 
+    private val onFlingNavigationCallBack: OnFlingNavigationCallBack by lazy {
+        object: OnFlingNavigationCallBack {
+            override fun loadPrevious() {
+                _binding?.top?.visibility = View.VISIBLE
+                _binding?.top?.postDelayed(
+                    {
+                        _binding?.top?.visibility = View.GONE
+
+                        val l = navigator?.webViewListener?:return@postDelayed
+                        l.goBackward(true)
+                        l.goToPreviousResource(jump = true, animated = true)
+                    }, 250
+                )
+            }
+
+            override fun loadNext() {
+                _binding?.bottom?.visibility = View.VISIBLE
+                _binding?.root?.postDelayed({
+                    _binding?.bottom?.visibility = View.GONE
+
+                    val l = navigator?.webViewListener?:return@postDelayed
+                    l.goForward(true)
+                    l.goToNextResource(jump = true, animated = true)
+                }, 250)
+
+
+            }
+        }
+    }
+
+
+
+    private val mGestureDetector: GestureDetector by lazy {
+        GestureDetector(requireContext(), object :
+            GestureDetector.SimpleOnGestureListener() {
+            override fun onFling(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float
+            ): Boolean {
+                if(webView == null) return false
+
+                val diffY = e2.y - (e1?.y ?:0f)
+
+                if (abs(diffY) < SWIPE_THRESHOLD) {
+                    return false
+                }
+                if(abs(velocityY) < SWIPE_VELOCITY_THRESHOLD) {
+                    return false
+                }
+                // guaranteed powerful fling
+                val webView = webView!!
+                val scrollY = webView.scrollY
+                val contentHeight = (webView.contentHeight)
+                val viewHeight = webView.height
+
+                when {
+                    scrollY == 0 -> {
+                        Timber.tag("WebViewFling").d("Fling at TOP")
+                        // 2 cases:
+                        // 1 small content
+                        if(viewHeight == contentHeight) {
+                            if(diffY > 0) {
+                                onFlingNavigationCallBack.loadPrevious()
+                            } else {
+                                onFlingNavigationCallBack.loadNext()
+                            }
+                        } else {
+                            // 2 large content
+                            onFlingNavigationCallBack.loadPrevious()
+                        }
+
+                        return true
+                    }
+                    scrollY + viewHeight >= contentHeight -> {
+                        Timber.tag("WebViewFling").d("Fling at BOTTOM")
+                        onFlingNavigationCallBack.loadNext()
+                        return true
+                    }
+                    else -> {
+                        Timber.tag("WebViewFling").d("Fling somewhere in middle")
+                        return false
+                    }
+                }
+                return super.onFling(e1, e2, velocityX, velocityY)
+            }
+        })
+    }
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         pendingLocator = BundleCompat.getParcelable(
@@ -144,6 +239,16 @@ internal class R2EpubPageFragment : Fragment() {
 
         val webView = binding.webView
         this.webView = webView
+
+        webView.setOnTouchListener { v, event ->
+            if(viewModel.isScrollEnabled.value) {
+                mGestureDetector.onTouchEvent(event)
+            }
+            false
+        }
+
+
+
 
         webView.visibility = View.INVISIBLE
         navigator?.webViewListener?.let { listener ->
@@ -489,6 +594,9 @@ internal class R2EpubPageFragment : Fragment() {
     companion object {
         private const val textZoomBundleKey = "org.readium.textZoom"
 
+        private val SWIPE_THRESHOLD = 100
+        private val SWIPE_VELOCITY_THRESHOLD = 100
+
         fun newInstance(
             url: AbsoluteUrl,
             link: Link? = null,
@@ -522,4 +630,9 @@ private fun View.setOnClickListenerWithPoint(action: (View, PointF) -> Unit) {
     setOnClickListener {
         action(it, point)
     }
+}
+
+internal interface OnFlingNavigationCallBack {
+    fun loadPrevious()
+    fun loadNext()
 }
