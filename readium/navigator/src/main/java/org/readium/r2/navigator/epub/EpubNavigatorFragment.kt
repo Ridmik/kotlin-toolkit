@@ -38,6 +38,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -75,6 +76,7 @@ import org.readium.r2.navigator.pager.R2EpubPageFragment
 import org.readium.r2.navigator.pager.R2PagerAdapter
 import org.readium.r2.navigator.pager.R2PagerAdapter.PageResource
 import org.readium.r2.navigator.pager.R2ViewPager
+import org.readium.r2.navigator.pager.experimental.ViewPagerCompat
 import org.readium.r2.navigator.preferences.Configurable
 import org.readium.r2.navigator.preferences.FontFamily
 import org.readium.r2.navigator.preferences.ReadingProgression
@@ -95,6 +97,7 @@ import org.readium.r2.shared.util.Url
 import org.readium.r2.shared.util.mediatype.MediaType
 import org.readium.r2.shared.util.resource.Resource
 import org.readium.r2.shared.util.toAbsoluteUrl
+import timber.log.Timber
 
 /**
  * Factory for a [JavascriptInterface] which will be injected in the web views.
@@ -412,7 +415,14 @@ public class EpubNavigatorFragment internal constructor(
         resourcePager = binding.resourcePager
         resetResourcePager()
 
-        resourcePager.addOnPageChangeListener(object : ViewPager.SimpleOnPageChangeListener() {
+        resourcePager.addOnPageChangeListener(object : ViewPagerCompat.OnPageChangeListener {
+            override fun onPageScrolled(
+                position: Int,
+                positionOffset: Float,
+                positionOffsetPixels: Int
+            ) {
+                Timber.tag(TAG).d("position: $position, positionOffset: $positionOffset, positionOffsetPixels: $positionOffsetPixels")
+            }
 
             override fun onPageSelected(position: Int) {
 //                if (viewModel.layout == EpubLayout.REFLOWABLE) {
@@ -440,6 +450,10 @@ public class EpubNavigatorFragment internal constructor(
                 currentPagerPosition = position // Update current position
 
                 notifyCurrentLocation()
+            }
+
+            override fun onPageScrollStateChanged(state: Int) {
+                Timber.tag(TAG).d("state = $state")
             }
         })
 
@@ -533,6 +547,16 @@ public class EpubNavigatorFragment internal constructor(
                     ?: initialLocator
                 if (locator != null) {
                     go(locator)
+                }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.isScrollEnabled.collectLatest { isScroll ->
+                if(isScroll) {
+                    resourcePager.orientation = ViewPagerCompat.VERTICAL
+                } else {
+                    resourcePager.orientation = ViewPagerCompat.HORIZONTAL
                 }
             }
         }
@@ -1136,6 +1160,8 @@ public class EpubNavigatorFragment internal constructor(
          */
         public fun assetUrl(path: String): Url? =
             WebViewServer.assetUrl(path)
+
+        private const val TAG = "EpubNavigatorFragment"
     }
 }
 

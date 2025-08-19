@@ -36,6 +36,7 @@ import org.readium.r2.navigator.input.TapEvent
 import org.readium.r2.navigator.pager.R2CbzPageFragment
 import org.readium.r2.navigator.pager.R2PagerAdapter
 import org.readium.r2.navigator.pager.R2ViewPager
+import org.readium.r2.navigator.pager.experimental.ViewPagerCompat
 import org.readium.r2.navigator.preferences.Axis
 import org.readium.r2.navigator.preferences.ReadingProgression
 import org.readium.r2.navigator.util.createFragmentFactory
@@ -106,9 +107,20 @@ public class ImageNavigatorFragment private constructor(
 
         positions = runBlocking { publication.positions() }
 
-        resourcePager.addOnPageChangeListener(object : ViewPager.SimpleOnPageChangeListener() {
+        resourcePager.addOnPageChangeListener(object : ViewPagerCompat.OnPageChangeListener {
+            override fun onPageScrolled(
+                position: Int,
+                positionOffset: Float,
+                positionOffsetPixels: Int
+            ) {
+
+            }
+
             override fun onPageSelected(position: Int) {
                 notifyCurrentLocation()
+            }
+
+            override fun onPageScrollStateChanged(state: Int) {
             }
         })
 

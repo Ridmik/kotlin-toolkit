@@ -30,6 +30,7 @@ import androidx.core.view.ViewCompat;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
+import org.readium.r2.navigator.pager.experimental.ViewPagerCompat;
 import org.readium.r2.navigator.preferences.ReadingProgression;
 
 import java.util.HashMap;
@@ -44,7 +45,7 @@ import java.util.HashMap;
  * <code>OnPageChangeListener</code>s so that clients can be agnostic to layout direction and
  * modifications are kept internal to <code>RtlViewPager</code>.
  */
-class R2RTLViewPager extends ViewPager {
+class R2RTLViewPager extends ViewPagerCompat {
     public ReadingProgression direction = ReadingProgression.LTR;
     private int mLayoutDirection = ViewCompat.LAYOUT_DIRECTION_LTR;
     private HashMap<OnPageChangeListener, ReversingOnPageChangeListener> mPageChangeListeners = new HashMap<>();
@@ -184,10 +185,12 @@ class R2RTLViewPager extends ViewPager {
         super.onRestoreInstanceState(ss.mViewPagerSavedState);
     }
 
+    /*
     @Override
     public void setOnPageChangeListener(ViewPager.OnPageChangeListener listener) {
         super.setOnPageChangeListener(new ReversingOnPageChangeListener(listener));
     }
+    */
 
     @Override
     public void addOnPageChangeListener(OnPageChangeListener listener) {
