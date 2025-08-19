@@ -136,7 +136,9 @@ internal class R2EpubPageFragment : Fragment() {
                     {
                         _binding?.top?.visibility = View.GONE
 
-                        navigator?.goBackward(animated = true)
+                        // navigator?.goBackward(animated = true)
+                        val viewPager = navigator?.resourcePager?:return@postDelayed
+                        viewPager.setCurrentItem(viewPager.currentItem - 1, /*smoothScroll=*/true)
                     }, 250
                 )
             }
@@ -146,7 +148,9 @@ internal class R2EpubPageFragment : Fragment() {
                 _binding?.root?.postDelayed({
                     _binding?.bottom?.visibility = View.GONE
 
-                   navigator?.goForward(animated = true)
+                   // navigator?.goForward(animated = true)
+                    val viewPager = navigator?.resourcePager?:return@postDelayed
+                    viewPager.setCurrentItem(viewPager.currentItem + 1, /*smoothScroll=*/true)
                 }, 250)
 
 
