@@ -136,9 +136,7 @@ internal class R2EpubPageFragment : Fragment() {
                     {
                         _binding?.top?.visibility = View.GONE
 
-                        val l = navigator?.webViewListener?:return@postDelayed
-                        l.goBackward(true)
-                        l.goToPreviousResource(jump = true, animated = true)
+                        navigator?.goBackward(animated = true)
                     }, 250
                 )
             }
@@ -148,9 +146,7 @@ internal class R2EpubPageFragment : Fragment() {
                 _binding?.root?.postDelayed({
                     _binding?.bottom?.visibility = View.GONE
 
-                    val l = navigator?.webViewListener?:return@postDelayed
-                    l.goForward(true)
-                    l.goToNextResource(jump = true, animated = true)
+                   navigator?.goForward(animated = true)
                 }, 250)
 
 
