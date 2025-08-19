@@ -743,6 +743,7 @@ internal class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView
                     val y = ev.safeGetY(activePointerIndex)
 
                     if (scrollMode) {
+                        /*
                         val totalDelta = (y - mInitialMotionY).toInt()
                         if (abs(totalDelta) < 200) {
                             if (mInitialMotionX < x) {
@@ -751,6 +752,7 @@ internal class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView
                                 scrollRight(animated = true)
                             }
                         }
+                        */
                     } else {
                         val velocity = getCurrentXVelocity() ?: 0
                         val totalDelta = (x - mInitialMotionX).toInt()
