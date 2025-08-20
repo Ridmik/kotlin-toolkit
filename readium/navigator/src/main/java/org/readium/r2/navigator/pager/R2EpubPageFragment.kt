@@ -15,13 +15,11 @@ import android.annotation.SuppressLint
 import android.graphics.PointF
 import android.os.Bundle
 import android.util.DisplayMetrics
-import android.util.Log
 import android.view.*
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import androidx.core.os.BundleCompat
-import androidx.core.view.ViewCompat
 import androidx.core.view.postDelayed
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -36,7 +34,6 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import kotlin.math.abs
 import kotlin.math.roundToInt
-import kotlin.text.compareTo
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.readium.r2.navigator.R
@@ -429,59 +426,38 @@ internal class R2EpubPageFragment : Fragment() {
         }
     }
 
-    private fun setupPadding() {
-        updatePadding()
+    private fun setupPadding() = viewLifecycleOwner.lifecycleScope.launch {
+        viewModel.isScrollEnabled.collectLatest { isScrollEnabled ->
+            val margin =
+                resources.getDimension(R.dimen.readium_navigator_epub_vertical_padding)
+                    .toInt()
 
-        // Update padding when the scroll mode changes
-        viewLifecycleOwner.lifecycleScope.launch {
-            webView?.scrollModeFlow?.collectLatest {
-                updatePadding()
-            }
-        }
+            var top = margin
+            var bottom = margin
 
-        if (shouldApplyInsetsPadding) {
-            // Update padding when the window insets change, for example when the navigation and status
-            // bars are toggled.
-            ViewCompat.setOnApplyWindowInsetsListener(containerView) { _, insets ->
-                updatePadding()
-                insets
-            }
-        }
-    }
-
-    private fun updatePadding() {
-        if (view == null) return
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-                val window = activity?.window ?: return@repeatOnLifecycle
-                var top = 0
-                var bottom = 0
-
-                // Add additional padding to take into account the display cutout, if needed.
-                if (
-                    shouldApplyInsetsPadding &&
-                    android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P &&
-                    window.attributes.layoutInDisplayCutoutMode != WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_NEVER
-                ) {
-                    // Request the display cutout insets from the decor view because the ones given by
-                    // setOnApplyWindowInsetsListener are not always correct for preloaded views.
-                    window.decorView.rootWindowInsets?.displayCutout?.let { displayCutoutInsets ->
-                        top += displayCutoutInsets.safeInsetTop
-                        bottom += displayCutoutInsets.safeInsetBottom
-                    }
-                }
-
-                if (!viewModel.isScrollEnabled.value) {
-                    val margin =
-                        resources.getDimension(R.dimen.readium_navigator_epub_vertical_padding)
-                            .toInt()
-                    top += margin
-                    bottom += margin
-                }
-
+            if(isScrollEnabled) {
                 containerView.setPadding(0, top, 0, bottom)
+                return@collectLatest
             }
+
+            val window = activity?.window ?: return@collectLatest
+
+            // Add additional padding to take into account the display cutout, if needed.
+            if (
+                shouldApplyInsetsPadding &&
+                android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P &&
+                window.attributes.layoutInDisplayCutoutMode != WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_NEVER
+            ) {
+                // Request the display cutout insets from the decor view because the ones given by
+                // setOnApplyWindowInsetsListener are not always correct for preloaded views.
+                window.decorView.rootWindowInsets?.displayCutout?.let { displayCutoutInsets ->
+                    top += displayCutoutInsets.safeInsetTop
+                    bottom += displayCutoutInsets.safeInsetBottom
+                }
+            }
+
+
+            containerView.setPadding(0, top, 0, bottom)
         }
     }
 
