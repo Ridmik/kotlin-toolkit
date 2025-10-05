@@ -350,6 +350,7 @@ public data class RsProperties(
 public enum class View(private val css: String) : Cssable {
     PAGED("readium-paged-on"),
     SCROLL("readium-scroll-on"),
+    MIXED("readium-scroll-on"), // TODO(BT-300): use dedicated css function if possible
     ;
 
     override fun toCss(): String = css

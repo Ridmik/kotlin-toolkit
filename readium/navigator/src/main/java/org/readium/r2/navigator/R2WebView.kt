@@ -28,6 +28,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.readium.r2.navigator.BuildConfig.DEBUG
+import org.readium.r2.navigator.epub.EpubSettings
 import timber.log.Timber
 
 /**
@@ -317,7 +318,7 @@ internal class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView
 
     internal fun updateCurrentItem() {
         val clientWidth = getClientWidth()
-        if (!scrollMode && !mIsBeingDragged && clientWidth != null) {
+        if ((scrollMode == EpubSettings.ReaderScroll.SLIDE.variant) && !mIsBeingDragged && clientWidth != null) {
             // Sometimes scrollX is not exactly a multiple of clientWidth, so we need to round the result.
             mCurItem = (scrollX.toDouble() / clientWidth.toDouble()).roundToInt()
         }
@@ -558,7 +559,7 @@ internal class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView
     }
 
     override fun computeScroll() {
-        if (scrollMode) {
+        if ((scrollMode != EpubSettings.ReaderScroll.SLIDE.variant)) {
             return super.computeScroll()
         }
 
@@ -742,7 +743,7 @@ internal class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView
                     val x = ev.safeGetX(activePointerIndex)
                     val y = ev.safeGetY(activePointerIndex)
 
-                    if (scrollMode) {
+                    if (scrollMode == EpubSettings.ReaderScroll.MIXED.variant) {
                         val totalDelta = (y - mInitialMotionY).toInt()
                         if (abs(totalDelta) < 200) {
                             if (mInitialMotionX < x) {
@@ -751,7 +752,7 @@ internal class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView
                                 scrollRight(animated = true)
                             }
                         }
-                    } else {
+                    } else if(scrollMode == EpubSettings.ReaderScroll.SLIDE.variant) {
                         val velocity = getCurrentXVelocity() ?: 0
                         val totalDelta = (x - mInitialMotionX).toInt()
                         val targetPage = determineTargetPage(

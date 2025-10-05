@@ -14,7 +14,9 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.os.Build
 import android.util.AttributeSet
-import android.view.*
+import android.view.ActionMode
+import android.view.MenuItem
+import android.view.View
 import android.webkit.URLUtil
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -24,12 +26,15 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.jsoup.Jsoup
 import org.jsoup.safety.Safelist
+import org.readium.r2.navigator.epub.EpubSettings
 import org.readium.r2.navigator.extensions.optRectF
 import org.readium.r2.navigator.input.InputModifier
 import org.readium.r2.navigator.input.Key
@@ -110,12 +115,25 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
 
     var resourceUrl: AbsoluteUrl? = null
 
-    internal val scrollModeFlow = MutableStateFlow(false)
+    internal val scrollModeFlow: MutableStateFlow<Boolean?> = MutableStateFlow(false)
 
     /** Indicates that a user text selection is active. */
     internal var isSelecting = false
 
-    val scrollMode: Boolean get() = scrollModeFlow.value
+    private var _scrollMode: Boolean? = null
+    val scrollMode: Boolean? get() = _scrollMode // scrollModeFlow.value // TODO(BT-339) check if scrollModeFlow.value actually works. if yes, keep it. else use a mainScopr
+
+
+    private val mainScope = MainScope()
+
+    init {
+        mainScope.launch {
+            scrollModeFlow.collectLatest {
+                _scrollMode = it
+            }
+        }
+    }
+
     var disablePageTurnsWhileScrolling: Boolean = false
 
     var callback: OnOverScrolledCallback? = null
@@ -128,7 +146,7 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
 
     /** Computes the current progression in the resource. */
     val progression: Double get() =
-        if (scrollMode) {
+        if (scrollMode != EpubSettings.ReaderScroll.SLIDE.variant) {
             val y = scrollY.toDouble()
             val contentHeight = computeVerticalScrollRange()
 
@@ -215,9 +233,9 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
 
             when {
                 // If the user is in scrollMode and has disabled swipe pagination, do nothing.
-                scrollMode && this@R2BasicWebView.disablePageTurnsWhileScrolling -> {}
+                (scrollMode != EpubSettings.ReaderScroll.SLIDE.variant) && this@R2BasicWebView.disablePageTurnsWhileScrolling -> {}
 
-                scrollMode ->
+                (scrollMode != EpubSettings.ReaderScroll.SLIDE.variant) ->
                     goRight(jump = true)
 
                 !this@R2BasicWebView.canScrollHorizontally(1) ->
@@ -249,9 +267,9 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
 
             when {
                 // If the user is in scrollMode and has disabled swipe pagination, do nothing.
-                scrollMode && this@R2BasicWebView.disablePageTurnsWhileScrolling -> {}
+                (scrollMode != EpubSettings.ReaderScroll.SLIDE.variant) && this@R2BasicWebView.disablePageTurnsWhileScrolling -> {}
 
-                scrollMode ->
+                (scrollMode != EpubSettings.ReaderScroll.SLIDE.variant) ->
                     goLeft(jump = true)
 
                 !this@R2BasicWebView.canScrollHorizontally(-1) ->
@@ -499,7 +517,7 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
 
     suspend fun scrollToLocator(locator: Locator): Boolean {
         val json = locator.toJSON().toString()
-        return runJavaScriptSuspend("readium.scrollToLocator($json);").toBoolean()
+        return runJavaScriptSuspend("readium.scrollToLocatorTTS($json);").toBoolean()
     }
 
     fun setScrollMode(scrollMode: Boolean) {

@@ -96,7 +96,10 @@ internal class EpubNavigatorViewModel(
                 } else {
                     false
                 },
-                axis = if (settings.scroll && !settings.verticalText) {
+                axis = if (
+                    (settings.scroll != EpubSettings.ReaderScroll.SLIDE.variant) &&
+                    (!settings.verticalText)
+                ) {
                     Axis.VERTICAL
                 } else {
                     Axis.HORIZONTAL
@@ -273,7 +276,7 @@ internal class EpubNavigatorViewModel(
     /**
      * Indicates whether the navigator is scrollable instead of paginated.
      */
-    val isScrollEnabled: StateFlow<Boolean> get() =
+    val triScrollState: StateFlow<Boolean?> get() =
         settings.mapStateIn(viewModelScope) {
             if (layout == EpubLayout.REFLOWABLE) it.scroll else false
         }

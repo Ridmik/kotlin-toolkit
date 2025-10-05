@@ -31,13 +31,13 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.withStarted
-import androidx.viewpager.widget.ViewPager
 import kotlin.math.ceil
 import kotlin.reflect.KClass
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -75,6 +75,9 @@ import org.readium.r2.navigator.pager.R2EpubPageFragment
 import org.readium.r2.navigator.pager.R2PagerAdapter
 import org.readium.r2.navigator.pager.R2PagerAdapter.PageResource
 import org.readium.r2.navigator.pager.R2ViewPager
+import org.readium.r2.navigator.pager.experimental.ViewPagerCompat
+import org.readium.r2.navigator.pager.experimental.VolumeButtonCallBack
+import org.readium.r2.navigator.pager.experimental.VolumeButtonControllable
 import org.readium.r2.navigator.preferences.Configurable
 import org.readium.r2.navigator.preferences.FontFamily
 import org.readium.r2.navigator.preferences.ReadingProgression
@@ -95,6 +98,7 @@ import org.readium.r2.shared.util.Url
 import org.readium.r2.shared.util.mediatype.MediaType
 import org.readium.r2.shared.util.resource.Resource
 import org.readium.r2.shared.util.toAbsoluteUrl
+import timber.log.Timber
 
 /**
  * Factory for a [JavascriptInterface] which will be injected in the web views.
@@ -412,14 +416,21 @@ public class EpubNavigatorFragment internal constructor(
         resourcePager = binding.resourcePager
         resetResourcePager()
 
-        resourcePager.addOnPageChangeListener(object : ViewPager.SimpleOnPageChangeListener() {
+        resourcePager.addOnPageChangeListener(object : ViewPagerCompat.OnPageChangeListener {
+            override fun onPageScrolled(
+                position: Int,
+                positionOffset: Float,
+                positionOffsetPixels: Int
+            ) {
+                Timber.tag(TAG).d("position: $position, positionOffset: $positionOffset, positionOffsetPixels: $positionOffsetPixels")
+            }
 
             override fun onPageSelected(position: Int) {
 //                if (viewModel.layout == EpubLayout.REFLOWABLE) {
 //                    resourcePager.disableTouchEvents = true
 //                }
                 currentReflowablePageFragment?.webView?.let { webView ->
-                    if (viewModel.isScrollEnabled.value) {
+                    if (viewModel.triScrollState.value == EpubSettings.ReaderScroll.SCROLL.variant) {
                         if (currentPagerPosition < position) {
                             // handle swipe LEFT
                             webView.scrollToStart()
@@ -427,7 +438,7 @@ public class EpubNavigatorFragment internal constructor(
                             // handle swipe RIGHT
                             webView.scrollToEnd()
                         }
-                    } else {
+                    } else { // slide or mixed. TODO(BT-339): see which one is better: mixed here in else block, or in if block. this is one point of confusion
                         if (currentPagerPosition < position) {
                             // handle swipe LEFT
                             webView.setCurrentItem(0, false)
@@ -441,12 +452,18 @@ public class EpubNavigatorFragment internal constructor(
 
                 notifyCurrentLocation()
             }
+
+            override fun onPageScrollStateChanged(state: Int) {
+                Timber.tag(TAG).d("state = $state")
+            }
         })
 
         // Fixed layout publications cannot intercept JS events yet.
         if (publication.metadata.presentation.layout == EpubLayout.FIXED) {
             view = KeyInterceptorView(view, inputListener)
         }
+
+        overrideVolumeControlButtons()
 
         return view
     }
@@ -536,6 +553,40 @@ public class EpubNavigatorFragment internal constructor(
                 }
             }
         }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.triScrollState.collectLatest { isScroll ->
+                if(isScroll == EpubSettings.ReaderScroll.SCROLL.variant) {
+                    resourcePager.orientation = ViewPagerCompat.VERTICAL
+                } else {
+                    resourcePager.orientation = ViewPagerCompat.HORIZONTAL
+                }
+            }
+        }
+    }
+
+
+    private fun overrideVolumeControlButtons() {
+        if(activity !is VolumeButtonControllable) {
+            Timber.tag("OverrideVolumeButton").e("The host activity is not volumeButtonControllable instance, returning...")
+            return
+        }
+        Timber.tag("OverrideVolumeButton").i("set volume button callback")
+        (activity as VolumeButtonControllable).setVolumeButtonCallBack(this.volumeButtonCallBack)
+    }
+
+    private fun resetVolumeControlButtons() {
+        if(activity !is VolumeButtonControllable) {
+            Timber.tag("OverrideVolumeButton").e("The host activity is not volumeButtonControllable instance, returning...")
+            return
+        }
+        Timber.tag("OverrideVolumeButton").i("clear volume button callback")
+        (activity as VolumeButtonControllable).setVolumeButtonCallBack(null)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        resetVolumeControlButtons()
     }
 
     private fun handleEvent(event: EpubNavigatorViewModel.Event) {
@@ -1107,6 +1158,39 @@ public class EpubNavigatorFragment internal constructor(
         }
     }
 
+    private val volumeButtonCallBack by lazy {
+        object : VolumeButtonCallBack {
+            override fun onVolumeUp() {
+                try {
+                    if(resourcePager.currentItem <= 0) {
+                        Timber.tag("OverrideVolumeButton").i("onVolumeUp, Reached first page, returning...")
+                        return
+                    }
+                    Timber.tag("OverrideVolumeButton").i("onVolumeUp, load previous page...")
+                    resourcePager.setCurrentItem( resourcePager.currentItem - 1, true)
+
+                } catch (x: Exception) {
+                    x.printStackTrace()
+                }
+            }
+
+            override fun onVolumeDown() {
+                try {
+                    if(resourcePager.currentItem >= resourcePager.count - 1) {
+                        Timber.tag("OverrideVolumeButton").i("onVolumeDown, Reached last page, returning...")
+                        return
+                    }
+                    Timber.tag("OverrideVolumeButton").i("onVolumeDown, load next page...")
+                    resourcePager.setCurrentItem( resourcePager.currentItem + 1, true)
+
+                } catch (x: Exception) {
+                    x.printStackTrace()
+                }
+            }
+        }
+    }
+
+
     public companion object {
 
         /**
@@ -1136,6 +1220,8 @@ public class EpubNavigatorFragment internal constructor(
          */
         public fun assetUrl(path: String): Url? =
             WebViewServer.assetUrl(path)
+
+        private const val TAG = "EpubNavigatorFragment"
     }
 }
 

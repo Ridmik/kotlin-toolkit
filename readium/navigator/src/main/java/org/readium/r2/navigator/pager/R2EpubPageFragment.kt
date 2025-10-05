@@ -20,7 +20,6 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import androidx.core.os.BundleCompat
-import androidx.core.view.ViewCompat
 import androidx.core.view.postDelayed
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -33,6 +32,7 @@ import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -42,6 +42,7 @@ import org.readium.r2.navigator.R2WebView
 import org.readium.r2.navigator.databinding.ReadiumNavigatorViewpagerFragmentEpubBinding
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
 import org.readium.r2.navigator.epub.EpubNavigatorViewModel
+import org.readium.r2.navigator.epub.EpubSettings
 import org.readium.r2.navigator.extensions.htmlId
 import org.readium.r2.navigator.preferences.ReadingProgression
 import org.readium.r2.shared.ExperimentalReadiumApi
@@ -49,6 +50,7 @@ import org.readium.r2.shared.InternalReadiumApi
 import org.readium.r2.shared.publication.Link
 import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.util.AbsoluteUrl
+import timber.log.Timber
 
 @OptIn(ExperimentalReadiumApi::class)
 internal class R2EpubPageFragment : Fragment() {
@@ -124,6 +126,149 @@ internal class R2EpubPageFragment : Fragment() {
             ?.let { textZoom = it }
     }
 
+    private val onFlingNavigationCallBack: OnFlingNavigationCallBack by lazy {
+        object: OnFlingNavigationCallBack {
+
+            private var isPostDelayed = false
+
+            override fun loadPrevious() {
+                if(viewModel.triScrollState.value == EpubSettings.ReaderScroll.SCROLL.variant) {
+                    onScrollLoadPrevious()
+                } else if(viewModel.triScrollState.value == EpubSettings.ReaderScroll.MIXED.variant) {
+                    val viewPager = navigator?.resourcePager?:return
+                    viewPager.setCurrentItem(viewPager.currentItem - 1, /*smoothScroll=*/true)
+                }
+            }
+
+            private fun onScrollLoadPrevious() {
+                if(isPostDelayed) {
+                    return
+                }
+                val viewPager = navigator?.resourcePager
+                if(viewPager?.currentItem == 0) {
+                    Timber.tag(TAG).e("reached the first page, returning...")
+                    return
+                }
+                isPostDelayed = true
+
+                _binding?.top?.visibility = View.VISIBLE
+                _binding?.root?.postDelayed(
+                    {
+                        _binding?.top?.visibility = View.GONE
+
+                        // navigator?.goBackward(animated = true)
+                        val viewPager = navigator?.resourcePager?:return@postDelayed
+                        viewPager.setCurrentItem(viewPager.currentItem - 1, /*smoothScroll=*/true)
+                        isPostDelayed = false
+                    }, 250
+                )
+            }
+
+            override fun loadNext() {
+                if(viewModel.triScrollState.value == EpubSettings.ReaderScroll.SCROLL.variant) {
+                    onScrollLoadNext()
+                } else if(viewModel.triScrollState.value == EpubSettings.ReaderScroll.MIXED.variant) {
+                    val viewPager = navigator?.resourcePager?:return
+                    viewPager.setCurrentItem(viewPager.currentItem + 1, /*smoothScroll=*/true)
+                }
+            }
+
+            private fun onScrollLoadNext() {
+                if(isPostDelayed) {
+                    return
+                }
+                val viewPager = navigator?.resourcePager
+
+                val currentItem = viewPager?.currentItem?:return
+                val totalCount = viewPager.count
+                val lastItem = totalCount - 1
+                Timber.tag(TAG).e("onScrollLoadNext currentItem: $currentItem, lastItem: $lastItem")
+
+                if(currentItem == lastItem) {
+                    Timber.tag(TAG).e("reached the last page, returning...")
+                    return
+                }
+                isPostDelayed = true
+
+
+                _binding?.bottom?.visibility = View.VISIBLE
+                _binding?.root?.postDelayed({
+                    _binding?.bottom?.visibility = View.GONE
+
+                    // navigator?.goForward(animated = true)
+                    val viewPager = navigator?.resourcePager?:return@postDelayed
+                    viewPager.setCurrentItem(viewPager.currentItem + 1, /*smoothScroll=*/true)
+                    isPostDelayed = false
+                }, 250)
+            }
+        }
+    }
+
+
+
+    private val mGestureDetector: GestureDetector by lazy {
+        GestureDetector(requireContext(), object :
+            GestureDetector.SimpleOnGestureListener() {
+            override fun onFling(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float
+            ): Boolean {
+                if(viewModel.triScrollState.value != EpubSettings.ReaderScroll.SCROLL.variant) {
+                    return false
+                }
+
+                if(webView == null) return false
+
+                val diffY = e2.y - (e1?.y ?:0f)
+
+                if (abs(diffY) < SWIPE_THRESHOLD) {
+                    return false
+                }
+                if(abs(velocityY) < SWIPE_VELOCITY_THRESHOLD) {
+                    return false
+                }
+                // guaranteed powerful fling
+                val webView = webView!!
+                val scrollY = webView.scrollY
+                val contentHeight = (webView.contentHeight)
+                val viewHeight = webView.height
+
+                when {
+                    scrollY == 0 -> {
+                        Timber.tag("WebViewFling").d("Fling at TOP")
+                        // 2 cases:
+                        // 1 small content
+                        if(viewHeight == contentHeight) {
+                            if(diffY > 0) {
+                                onFlingNavigationCallBack.loadPrevious()
+                            } else {
+                                onFlingNavigationCallBack.loadNext()
+                            }
+                        } else {
+                            // 2 large content
+                            onFlingNavigationCallBack.loadPrevious()
+                        }
+
+                        return true
+                    }
+                    scrollY + viewHeight >= contentHeight -> {
+                        Timber.tag("WebViewFling").d("Fling at BOTTOM")
+                        onFlingNavigationCallBack.loadNext()
+                        return true
+                    }
+                    else -> {
+                        Timber.tag("WebViewFling").d("Fling somewhere in middle")
+                        return false
+                    }
+                }
+                return super.onFling(e1, e2, velocityX, velocityY)
+            }
+        })
+    }
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         pendingLocator = BundleCompat.getParcelable(
@@ -133,7 +278,7 @@ internal class R2EpubPageFragment : Fragment() {
         )
     }
 
-    @SuppressLint("SetJavaScriptEnabled", "JavascriptInterface")
+    @SuppressLint("SetJavaScriptEnabled", "JavascriptInterface", "ClickableViewAccessibility")
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -144,6 +289,16 @@ internal class R2EpubPageFragment : Fragment() {
 
         val webView = binding.webView
         this.webView = webView
+
+        webView.setOnTouchListener { v, event ->
+            if(viewModel.triScrollState.value == EpubSettings.ReaderScroll.SCROLL.variant) {
+                mGestureDetector.onTouchEvent(event)
+            }
+            false
+        }
+
+
+
 
         webView.visibility = View.INVISIBLE
         navigator?.webViewListener?.let { listener ->
@@ -299,7 +454,7 @@ internal class R2EpubPageFragment : Fragment() {
 
         val lifecycleOwner = viewLifecycleOwner
         lifecycleOwner.lifecycleScope.launch {
-            viewModel.isScrollEnabled
+            viewModel.triScrollState
                 .flowWithLifecycle(lifecycleOwner.lifecycle)
                 .collectLatest { webView?.scrollModeFlow?.value = it }
         }
@@ -324,59 +479,45 @@ internal class R2EpubPageFragment : Fragment() {
         }
     }
 
-    private fun setupPadding() {
-        updatePadding()
-
-        // Update padding when the scroll mode changes
-        viewLifecycleOwner.lifecycleScope.launch {
-            webView?.scrollModeFlow?.collectLatest {
-                updatePadding()
+    private fun setupPadding() = viewLifecycleOwner.lifecycleScope.launch {
+        viewModel.triScrollState.collectLatest { triScroll ->
+            if(triScroll == EpubSettings.ReaderScroll.SCROLL.variant) {
+                //case scroll: Absolutely no padding
+                containerView.setPadding(0, 0, 0, 0)
+                return@collectLatest
             }
-        }
 
-        if (shouldApplyInsetsPadding) {
-            // Update padding when the window insets change, for example when the navigation and status
-            // bars are toggled.
-            ViewCompat.setOnApplyWindowInsetsListener(containerView) { _, insets ->
-                updatePadding()
-                insets
-            }
-        }
-    }
+            val margin =
+                resources.getDimension(R.dimen.readium_navigator_epub_vertical_padding)
+                    .toInt()
 
-    private fun updatePadding() {
-        if (view == null) return
+            var top = margin
+            var bottom = margin
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-                val window = activity?.window ?: return@repeatOnLifecycle
-                var top = 0
-                var bottom = 0
-
-                // Add additional padding to take into account the display cutout, if needed.
-                if (
-                    shouldApplyInsetsPadding &&
-                    android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P &&
-                    window.attributes.layoutInDisplayCutoutMode != WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_NEVER
-                ) {
-                    // Request the display cutout insets from the decor view because the ones given by
-                    // setOnApplyWindowInsetsListener are not always correct for preloaded views.
-                    window.decorView.rootWindowInsets?.displayCutout?.let { displayCutoutInsets ->
-                        top += displayCutoutInsets.safeInsetTop
-                        bottom += displayCutoutInsets.safeInsetBottom
-                    }
-                }
-
-                if (!viewModel.isScrollEnabled.value) {
-                    val margin =
-                        resources.getDimension(R.dimen.readium_navigator_epub_vertical_padding)
-                            .toInt()
-                    top += margin
-                    bottom += margin
-                }
-
+            if(triScroll == EpubSettings.ReaderScroll.MIXED.variant) {
+                // case: Mixed
                 containerView.setPadding(0, top, 0, bottom)
+                return@collectLatest
             }
+            // case: Slide
+            val window = activity?.window ?: return@collectLatest
+
+            // Add additional padding to take into account the display cutout, if needed.
+            if (
+                shouldApplyInsetsPadding &&
+                android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P &&
+                window.attributes.layoutInDisplayCutoutMode != WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_NEVER
+            ) {
+                // Request the display cutout insets from the decor view because the ones given by
+                // setOnApplyWindowInsetsListener are not always correct for preloaded views.
+                window.decorView.rootWindowInsets?.displayCutout?.let { displayCutoutInsets ->
+                    top += displayCutoutInsets.safeInsetTop
+                    bottom += displayCutoutInsets.safeInsetBottom
+                }
+            }
+
+
+            containerView.setPadding(0, top, 0, bottom)
         }
     }
 
@@ -455,13 +596,13 @@ internal class R2EpubPageFragment : Fragment() {
         // We need to reverse the progression with RTL because the Web View
         // always scrolls from left to right, no matter the reading direction.
         progression =
-            if (webView.scrollMode || readingProgression == ReadingProgression.LTR) {
+            if ( (webView.scrollMode != EpubSettings.ReaderScroll.SLIDE.variant) || readingProgression == ReadingProgression.LTR) {
                 progression
             } else {
                 1 - progression
             }
 
-        if (webView.scrollMode) {
+        if (webView.scrollMode != EpubSettings.ReaderScroll.SLIDE.variant) {
             webView.scrollToPosition(progression)
         } else {
             // Figure out the target web view "page" from the requested
@@ -488,6 +629,11 @@ internal class R2EpubPageFragment : Fragment() {
 
     companion object {
         private const val textZoomBundleKey = "org.readium.textZoom"
+
+        private val SWIPE_THRESHOLD = 100
+        private val SWIPE_VELOCITY_THRESHOLD = 100
+
+        private const val TAG = "R2EpubPageFragment"
 
         fun newInstance(
             url: AbsoluteUrl,
@@ -522,4 +668,9 @@ private fun View.setOnClickListenerWithPoint(action: (View, PointF) -> Unit) {
     setOnClickListener {
         action(it, point)
     }
+}
+
+internal interface OnFlingNavigationCallBack {
+    fun loadPrevious()
+    fun loadNext()
 }

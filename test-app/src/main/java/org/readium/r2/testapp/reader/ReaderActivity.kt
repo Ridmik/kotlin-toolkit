@@ -8,8 +8,10 @@ package org.readium.r2.testapp.reader
 
 import android.os.Build
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.MenuItem
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
@@ -17,6 +19,8 @@ import androidx.fragment.app.FragmentResultListener
 import androidx.fragment.app.commit
 import androidx.fragment.app.commitNow
 import androidx.lifecycle.ViewModelProvider
+import org.readium.r2.navigator.pager.experimental.VolumeButtonCallBack
+import org.readium.r2.navigator.pager.experimental.VolumeButtonControllable
 import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.util.toUri
 import org.readium.r2.testapp.Application
@@ -33,7 +37,7 @@ import org.readium.r2.testapp.utils.launchWebBrowser
  *
  * This class can be used as it is or be inherited from.
  */
-open class ReaderActivity : AppCompatActivity() {
+open class ReaderActivity : AppCompatActivity(), VolumeButtonControllable {
 
     private val model: ReaderViewModel by viewModels()
 
@@ -190,6 +194,26 @@ open class ReaderActivity : AppCompatActivity() {
             }
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    private var volumeButtonCallBack: VolumeButtonCallBack? = null
+
+    override fun setVolumeButtonCallBack(callBack: VolumeButtonCallBack?) {
+        this.volumeButtonCallBack = callBack
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        return when (keyCode) {
+            KeyEvent.KEYCODE_VOLUME_UP -> {
+                volumeButtonCallBack?.onVolumeUp()
+                true // consume event, system won't change volume
+            }
+            KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                volumeButtonCallBack?.onVolumeDown()
+                true
+            }
+            else -> super.onKeyDown(keyCode, event)
+        }
     }
 
     companion object {

@@ -93,7 +93,7 @@ public interface OverflowableNavigator : VisualNavigator {
         /**
          * If the overflow of the content is managed through scroll instead of pagination.
          */
-        public val scroll: Boolean
+        public val scroll: Boolean?
 
         /**
          * Main axis along which the resources are laid out.

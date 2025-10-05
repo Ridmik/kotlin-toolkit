@@ -500,3 +500,33 @@ private fun <T> SelectorListItem(
         }
     )
 }
+
+@Composable
+fun  ScrollButtonGroupItem(
+    title: String,
+    preference: Preference<Boolean?>,
+    commit: () -> Unit,
+    formatValue: (Boolean?) -> String,
+) {
+    ButtonGroupItem(
+        title = title,
+        options = listOf<Boolean?>(true, false, null),
+        isActive = preference.isEffective,
+        activeOption = preference.effectiveValue,
+        selectedOption = preference.value,
+        formatValue = formatValue,
+        onClear = {
+            preference.clear()
+            commit()
+        }
+            .takeIf { preference.value != null },
+        onSelectedOptionChanged = { newValue ->
+            if (newValue == preference.value) {
+                preference.clear()
+            } else {
+                preference.set(newValue)
+            }
+            commit()
+        }
+    )
+}

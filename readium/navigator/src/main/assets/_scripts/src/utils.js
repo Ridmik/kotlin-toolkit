@@ -139,6 +139,29 @@ export function scrollToLocator(locator) {
   return scrollToRange(range);
 }
 
+export function scrollToLocatorTTS(locator) {
+  let range = rangeFromLocator(locator);
+  if(!range) {
+    return false;
+  }
+  let rect = range.getBoundingClientRect();
+  let offset = -100;
+
+  // Create a new object with modified top value
+  let modifiedRect = {
+    top: rect.top + offset,
+    bottom: rect.bottom,
+    left: rect.left,
+    right: rect.right,
+    width: rect.width,
+    height: rect.height,
+    x: rect.x,
+    y: rect.y
+  };
+
+  return scrollToRect(modifiedRect);
+}
+
 function scrollToRange(range) {
   return scrollToRect(range.getBoundingClientRect());
 }

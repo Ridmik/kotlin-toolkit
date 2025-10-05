@@ -17,6 +17,7 @@ import {
   scrollToPosition,
   scrollToStart,
   scrollToLocator,
+  scrollToLocatorTTS,
   setProperty,
   setCSSProperties,
 } from "./utils";
@@ -37,6 +38,7 @@ window.readium = {
   setCSSProperties: setCSSProperties,
   setProperty: setProperty,
   removeProperty: removeProperty,
+  scrollToLocatorTTS: scrollToLocatorTTS,
 
   // selection
   getCurrentSelection: getCurrentSelection,

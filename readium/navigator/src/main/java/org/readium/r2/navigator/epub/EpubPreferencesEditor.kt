@@ -87,7 +87,7 @@ public class EpubPreferencesEditor internal constructor(
         EnumPreferenceDelegate(
             getValue = { preferences.columnCount },
             getEffectiveValue = { state.settings.columnCount },
-            getIsEffective = { layout == EpubLayout.REFLOWABLE && !state.settings.scroll },
+            getIsEffective = { (layout == EpubLayout.REFLOWABLE) && (state.settings.scroll != EpubSettings.ReaderScroll.SLIDE.variant) },
             updateValue = { value -> updateValues { it.copy(columnCount = value) } },
             supportedValues = listOf(ColumnCount.AUTO, ColumnCount.ONE, ColumnCount.TWO)
         )
@@ -331,10 +331,10 @@ public class EpubPreferencesEditor internal constructor(
      *
      * Only effective with reflowable publications.
      */
-    public val scroll: Preference<Boolean> =
+    public val scroll: Preference<Boolean?> =
         PreferenceDelegate(
             getValue = { preferences.scroll },
-            getEffectiveValue = { state.settings.scroll },
+            getEffectiveValue = { state.settings.scroll != EpubSettings.ReaderScroll.SLIDE.variant },
             getIsEffective = { layout == EpubLayout.REFLOWABLE && !state.settings.verticalText },
             updateValue = { value -> updateValues { it.copy(scroll = value) } }
         )

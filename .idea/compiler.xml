@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="CompilerConfiguration">
-    <bytecodeTargetLevel target="21" />
+    <bytecodeTargetLevel target="21">
+      <module name="Readium.readium.navigators.web.readium-navigator-web-common" target="21" />
+      <module name="Readium.readium.navigators.web.readium-navigator-web-fixedlayout" target="21" />
+      <module name="Readium.readium.navigators.web.readium-navigator-web-internals" target="21" />
+      <module name="Readium.readium.navigators.web.readium-navigator-web-reflowable" target="21" />
+    </bytecodeTargetLevel>
   </component>
 </project>

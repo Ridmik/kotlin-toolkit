@@ -52,7 +52,7 @@ public data class EpubSettings @ExperimentalReadiumApi constructor(
     val paragraphSpacing: Double?,
     val publisherStyles: Boolean,
     val readingProgression: ReadingProgression,
-    val scroll: Boolean,
+    val scroll: Boolean?,
     val spread: Spread,
     val textAlign: TextAlign?,
     val textColor: Color?,
@@ -61,7 +61,13 @@ public data class EpubSettings @ExperimentalReadiumApi constructor(
     val typeScale: Double?,
     val verticalText: Boolean,
     val wordSpacing: Double?,
-) : Configurable.Settings
+) : Configurable.Settings {
+    public enum class ReaderScroll(public val variant: Boolean?) {
+        SLIDE(false), // horizontal slide
+        SCROLL(true), // vertical scroll
+        MIXED(null) // both
+    }
+}
 
 @OptIn(ExperimentalReadiumApi::class)
 internal fun ReadiumCss.update(settings: EpubSettings, useReadiumCssFontSize: Boolean): ReadiumCss {
@@ -89,6 +95,7 @@ internal fun ReadiumCss.update(settings: EpubSettings, useReadiumCssFontSize: Bo
                 view = when (scroll) {
                     false -> View.PAGED
                     true -> View.SCROLL
+                    null -> View.MIXED
                 },
                 colCount = when (columnCount) {
                     ColumnCount.ONE -> ColCount.ONE

@@ -22,6 +22,7 @@ import org.readium.adapter.exoplayer.audio.ExoPlayerPreferencesEditor
 import org.readium.adapter.pdfium.navigator.PdfiumPreferencesEditor
 import org.readium.navigator.media.tts.android.AndroidTtsEngine
 import org.readium.r2.navigator.epub.EpubPreferencesEditor
+import org.readium.r2.navigator.epub.EpubSettings
 import org.readium.r2.navigator.preferences.*
 import org.readium.r2.navigator.preferences.TextAlign as ReadiumTextAlign
 import org.readium.r2.shared.ExperimentalReadiumApi
@@ -334,7 +335,7 @@ private fun ReflowableUserPreferences(
     paragraphSpacing: RangePreference<Double>? = null,
     publisherStyles: Preference<Boolean>? = null,
     readingProgression: EnumPreference<ReadingProgression>? = null,
-    scroll: Preference<Boolean>? = null,
+    scroll: Preference<Boolean?>? = null,
     textAlign: EnumPreference<ReadiumTextAlign?>? = null,
     textColor: Preference<Color>? = null,
     textNormalization: Preference<Boolean>? = null,
@@ -343,6 +344,24 @@ private fun ReflowableUserPreferences(
     verticalText: Preference<Boolean>? = null,
     wordSpacing: RangePreference<Double>? = null,
 ) {
+    if (scroll != null) {
+        /*
+        SwitchItem(
+            title = "Scroll",
+            preference = scroll,
+            commit = commit
+        )
+        */
+        ScrollButtonGroupItem(title = "scroll", scroll, commit = commit, formatValue = { bool ->
+            val state = when(bool) {
+                true -> EpubSettings.ReaderScroll.SCROLL
+                false -> EpubSettings.ReaderScroll.SLIDE
+                null -> EpubSettings.ReaderScroll.MIXED
+            }
+            state.name
+        })
+    }
+
     if (language != null || readingProgression != null || verticalText != null) {
         if (language != null) {
             LanguageItem(
@@ -372,13 +391,7 @@ private fun ReflowableUserPreferences(
     }
 
     if (scroll != null || columnCount != null || pageMargins != null) {
-        if (scroll != null) {
-            SwitchItem(
-                title = "Scroll",
-                preference = scroll,
-                commit = commit
-            )
-        }
+
 
         if (columnCount != null) {
             ButtonGroupItem(

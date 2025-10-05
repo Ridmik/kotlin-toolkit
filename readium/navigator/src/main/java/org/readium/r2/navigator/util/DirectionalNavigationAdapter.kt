@@ -7,6 +7,7 @@
 package org.readium.r2.navigator.util
 
 import org.readium.r2.navigator.OverflowableNavigator
+import org.readium.r2.navigator.epub.EpubSettings
 import org.readium.r2.navigator.input.InputListener
 import org.readium.r2.navigator.input.Key
 import org.readium.r2.navigator.input.KeyEvent
@@ -57,7 +58,10 @@ public class DirectionalNavigationAdapter(
     }
 
     override fun onTap(event: TapEvent): Boolean {
-        if (navigator.overflow.value.scroll && !handleTapsWhileScrolling) {
+        if (
+            (navigator.overflow.value.scroll != EpubSettings.ReaderScroll.SLIDE.variant)
+            && (!handleTapsWhileScrolling)
+        ) {
             return false
         }
 
