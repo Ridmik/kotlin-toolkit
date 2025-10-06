@@ -209,6 +209,43 @@ internal class R2EpubPageFragment : Fragment() {
     private val mGestureDetector: GestureDetector by lazy {
         GestureDetector(requireContext(), object :
             GestureDetector.SimpleOnGestureListener() {
+
+            private var dragOffset = 0f
+            private val DRAG_THRESHOLD = 200f
+
+            override fun onScroll(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                distanceX: Float,
+                distanceY: Float
+            ): Boolean {
+                val webView = webView ?: return false
+                val topLoader = _binding?.top?:return false
+                val bottomLoader = _binding?.bottom?:return false
+
+                val atTop = webView.scrollY == 0
+                val atBottom = webView.scrollY + webView.height >= webView.contentHeight
+
+
+
+                if (atTop) {
+                    val dy = (e2.y - (e1?.y ?: e2.y))
+                    if (dy > 0) { // pulling down
+                        dragOffset = dy.coerceAtMost(DRAG_THRESHOLD * 1.5f)
+                        topLoader.visibility = View.VISIBLE
+                        topLoader.translationY = dragOffset - topLoader.height
+                    }
+                } else if (atBottom) {
+                    val dy = (e2.y - (e1?.y ?: e2.y))
+                    if (dy < 0) { // pulling up
+                        dragOffset = (-dy).coerceAtMost(DRAG_THRESHOLD * 1.5f)
+                        bottomLoader.visibility = View.VISIBLE
+                        bottomLoader.translationY = -dragOffset + bottomLoader.height
+                    }
+                }
+                return false
+            }
+
             override fun onFling(
                 e1: MotionEvent?,
                 e2: MotionEvent,
