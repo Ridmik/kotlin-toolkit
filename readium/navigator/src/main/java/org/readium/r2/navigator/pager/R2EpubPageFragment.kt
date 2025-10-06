@@ -229,7 +229,7 @@ internal class R2EpubPageFragment : Fragment() {
                 if (atTop) {
                     val dy = (e2.y - (e1?.y ?: e2.y))
                     if (dy > 0) { // pulling down
-                        dragOffset = dy.coerceAtMost(DRAG_THRESHOLD * 1.5f)
+                        dragOffset = dy.coerceAtMost(DRAG_THRESHOLD)
                         topLoader.visibility = View.VISIBLE
                         topLoader.translationY = dragOffset - topLoader.height
 
@@ -239,7 +239,7 @@ internal class R2EpubPageFragment : Fragment() {
                 } else if (atBottom) {
                     val dy = (e2.y - (e1?.y ?: e2.y))
                     if (dy < 0) { // pulling up
-                        dragOffset = (-dy).coerceAtMost(DRAG_THRESHOLD * 1.5f)
+                        dragOffset = (-dy).coerceAtMost(DRAG_THRESHOLD)
                         bottomLoader.visibility = View.VISIBLE
                         bottomLoader.translationY = -dragOffset + bottomLoader.height
 
@@ -709,7 +709,7 @@ internal class R2EpubPageFragment : Fragment() {
         private const val SWIPE_VELOCITY_THRESHOLD = 100
 
         private var dragOffset = 0f
-        private const val DRAG_THRESHOLD = 200f
+        private const val DRAG_THRESHOLD = 300f
 
         private const val TAG = "R2EpubPageFragment"
 
