@@ -210,8 +210,6 @@ internal class R2EpubPageFragment : Fragment() {
         GestureDetector(requireContext(), object :
             GestureDetector.SimpleOnGestureListener() {
 
-            private var dragOffset = 0f
-            private val DRAG_THRESHOLD = 200f
 
             override fun onScroll(
                 e1: MotionEvent?,
@@ -305,6 +303,37 @@ internal class R2EpubPageFragment : Fragment() {
         })
     }
 
+    private fun resetEdgeLoaders(event: MotionEvent) {
+        val ok =
+            (event.action == MotionEvent.ACTION_UP) || (event.action == MotionEvent.ACTION_CANCEL)
+
+        if(!ok) {
+            return
+        }
+
+        val topLoader = _binding?.top ?: return
+        val bottomLoader = _binding?.bottom ?: return
+
+        // Always animate back to hidden
+        _binding?.root?.postDelayed({
+            topLoader.animate()
+                .translationY(-topLoader.height.toFloat())
+                .setDuration(200)
+                .withEndAction {
+                    topLoader.visibility = View.GONE
+                }
+
+            bottomLoader.animate()
+                .translationY(bottomLoader.height.toFloat())
+                .setDuration(200)
+                .withEndAction {
+                    bottomLoader.visibility = View.GONE
+                }
+
+            dragOffset = 0f
+        }, 250)
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -327,8 +356,9 @@ internal class R2EpubPageFragment : Fragment() {
         val webView = binding.webView
         this.webView = webView
 
-        webView.setOnTouchListener { v, event ->
+        webView.setOnTouchListener { _, event ->
             if(viewModel.triScrollState.value == EpubSettings.ReaderScroll.SCROLL.variant) {
+                resetEdgeLoaders(event)
                 mGestureDetector.onTouchEvent(event)
             }
             false
@@ -667,8 +697,11 @@ internal class R2EpubPageFragment : Fragment() {
     companion object {
         private const val textZoomBundleKey = "org.readium.textZoom"
 
-        private val SWIPE_THRESHOLD = 100
-        private val SWIPE_VELOCITY_THRESHOLD = 100
+        private const val SWIPE_THRESHOLD = 100
+        private const val SWIPE_VELOCITY_THRESHOLD = 100
+
+        private var dragOffset = 0f
+        private const val DRAG_THRESHOLD = 200f
 
         private const val TAG = "R2EpubPageFragment"
 
