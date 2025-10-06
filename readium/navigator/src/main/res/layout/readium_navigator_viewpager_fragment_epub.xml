@@ -55,7 +55,7 @@
             app:layout_constraintBottom_toBottomOf="parent" />
 
         <TextView
-            android:text="Previous chapter"
+            android:text="@string/readium_chapter_previous"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="12sp"
@@ -97,7 +97,7 @@
             app:layout_constraintBottom_toBottomOf="parent" />
 
         <TextView
-            android:text="Next chapter"
+            android:text="@string/readium_chapter_next"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="12sp"

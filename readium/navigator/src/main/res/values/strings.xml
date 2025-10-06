@@ -9,4 +9,6 @@
     <string name="readium_media_notification_channel_name">Audiobook</string>
     <string name="readium_media_notification_channel_description">Audiobook currently being played</string>
 
+    <string name="readium_chapter_previous">Previous chapter</string>
+    <string name="readium_chapter_next">Next chapter</string>
 </resources>
