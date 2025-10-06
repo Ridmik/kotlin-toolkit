@@ -154,7 +154,7 @@ internal class R2EpubPageFragment : Fragment() {
                 _binding?.top?.visibility = View.VISIBLE
                 _binding?.root?.postDelayed(
                     {
-                        _binding?.top?.visibility = View.GONE
+                        _binding?.top?.visibility = View.INVISIBLE
 
                         // navigator?.goBackward(animated = true)
                         val viewPager = navigator?.resourcePager?:return@postDelayed
@@ -193,7 +193,7 @@ internal class R2EpubPageFragment : Fragment() {
 
                 _binding?.bottom?.visibility = View.VISIBLE
                 _binding?.root?.postDelayed({
-                    _binding?.bottom?.visibility = View.GONE
+                    _binding?.bottom?.visibility = View.INVISIBLE
 
                     // navigator?.goForward(animated = true)
                     val viewPager = navigator?.resourcePager?:return@postDelayed
