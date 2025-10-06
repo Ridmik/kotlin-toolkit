@@ -5,7 +5,7 @@
         <shape
             android:shape="ring"
             android:innerRadiusRatio="3"
-            android:thicknessRatio="12"
+            android:thicknessRatio="7"
             android:useLevel="false">
             <solid android:color="#33000000"/> <!-- light gray background -->
         </shape>
@@ -17,7 +17,7 @@
             <shape
                 android:shape="ring"
                 android:innerRadiusRatio="3"
-                android:thicknessRatio="12"
+                android:thicknessRatio="7"
                 android:useLevel="true">
                 <solid android:color="@color/readium_color_primary"/>
             </shape>

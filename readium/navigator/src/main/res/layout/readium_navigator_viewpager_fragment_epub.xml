@@ -48,8 +48,8 @@
             android:progressDrawable="@drawable/readium_determinate_progress"
             android:indeterminate="false"
 
-            android:layout_width="12dp"
-            android:layout_height="12dp"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
             android:layout_marginRight="6dp"
             android:indeterminateTint="@color/readium_color_primary"
             app:layout_constraintBottom_toBottomOf="parent" />
@@ -90,8 +90,8 @@
             android:progressDrawable="@drawable/readium_determinate_progress"
             android:indeterminate="false"
 
-            android:layout_width="12dp"
-            android:layout_height="12dp"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
             android:layout_marginRight="6dp"
             android:indeterminateTint="@color/readium_color_primary"
             app:layout_constraintBottom_toBottomOf="parent" />
