@@ -1,23 +1,26 @@
-<!-- res/drawable/rounded_background.xml -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Background color -->
-    <solid android:color="#ffffff" />
+    <item>
+        <shape>
+            <padding android:top="0dp" android:right="0dp" android:bottom="1.5dp" android:left="0dp" />
+            <solid android:color="#30CCCCCC" />
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+    <item>
+        <shape>
+            <padding android:top="0dp" android:right="0dp" android:bottom="1.5dp" android:left="0dp" />
+            <solid android:color="#50CCCCCC" />
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
 
-    <!-- Rounded corners -->
-    <corners android:radius="16dp" />
-
-    <!-- Optional stroke (border) -->
-    <stroke
-        android:width="1dp"
-        android:color="#e7e7e7" />
-
-    <!-- Optional padding inside -->
-    <padding
-        android:left="8dp"
-        android:top="8dp"
-        android:right="8dp"
-        android:bottom="8dp" />
-
-</shape>
+    <!-- Background -->
+    <item>
+        <shape>
+            <solid android:color="#FFFFFF" />
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+</layer-list>
