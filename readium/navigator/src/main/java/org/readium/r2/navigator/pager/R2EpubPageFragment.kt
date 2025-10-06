@@ -232,6 +232,9 @@ internal class R2EpubPageFragment : Fragment() {
                         dragOffset = dy.coerceAtMost(DRAG_THRESHOLD * 1.5f)
                         topLoader.visibility = View.VISIBLE
                         topLoader.translationY = dragOffset - topLoader.height
+
+                        val progress = (dragOffset / DRAG_THRESHOLD).coerceIn(0f, 1f)
+                        _binding?.topProgress?.progress = (progress * 100).toInt()
                     }
                 } else if (atBottom) {
                     val dy = (e2.y - (e1?.y ?: e2.y))
@@ -239,6 +242,9 @@ internal class R2EpubPageFragment : Fragment() {
                         dragOffset = (-dy).coerceAtMost(DRAG_THRESHOLD * 1.5f)
                         bottomLoader.visibility = View.VISIBLE
                         bottomLoader.translationY = -dragOffset + bottomLoader.height
+
+                        val progress = (dragOffset / DRAG_THRESHOLD).coerceIn(0f, 1f)
+                        _binding?.bottomProgress?.progress = (progress * 100).toInt()
                     }
                 }
                 return false
@@ -330,6 +336,8 @@ internal class R2EpubPageFragment : Fragment() {
                     bottomLoader.visibility = View.GONE
                 }
 
+            _binding?.topProgress?.progress = 0
+            _binding?.bottomProgress?.progress = 0
             dragOffset = 0f
         }, 250)
     }

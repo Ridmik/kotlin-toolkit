@@ -1,0 +1,26 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Background ring -->
+    <item android:id="@android:id/background">
+        <shape
+            android:shape="ring"
+            android:innerRadiusRatio="3"
+            android:thicknessRatio="12"
+            android:useLevel="false">
+            <solid android:color="#33000000"/> <!-- light gray background -->
+        </shape>
+    </item>
+
+    <!-- Progress ring -->
+    <item android:id="@android:id/progress">
+        <clip android:clipOrientation="horizontal" android:gravity="left">
+            <shape
+                android:shape="ring"
+                android:innerRadiusRatio="3"
+                android:thicknessRatio="12"
+                android:useLevel="true">
+                <solid android:color="@color/readium_color_primary"/>
+            </shape>
+        </clip>
+    </item>
+</layer-list>

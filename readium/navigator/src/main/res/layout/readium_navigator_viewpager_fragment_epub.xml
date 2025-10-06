@@ -41,10 +41,16 @@
         android:gravity="center_vertical"
         >
         <ProgressBar
+            android:id="@+id/top_progress"
+            android:max="100"
+            android:progress="0"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:progressDrawable="@drawable/readium_determinate_progress"
+            android:indeterminate="false"
+
             android:layout_width="12dp"
             android:layout_height="12dp"
             android:layout_marginRight="6dp"
-            android:indeterminate="true"
             android:indeterminateTint="@color/readium_color_primary"
             app:layout_constraintBottom_toBottomOf="parent" />
 
@@ -77,10 +83,16 @@
         android:paddingVertical="8dp"
         >
         <ProgressBar
+            android:id="@+id/bottom_progress"
+            android:max="100"
+            android:progress="0"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:progressDrawable="@drawable/readium_determinate_progress"
+            android:indeterminate="false"
+
             android:layout_width="12dp"
             android:layout_height="12dp"
             android:layout_marginRight="6dp"
-            android:indeterminate="true"
             android:indeterminateTint="@color/readium_color_primary"
             app:layout_constraintBottom_toBottomOf="parent" />
 
