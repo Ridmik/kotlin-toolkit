@@ -314,6 +314,7 @@ internal class R2EpubPageFragment : Fragment() {
             (event.action == MotionEvent.ACTION_UP) || (event.action == MotionEvent.ACTION_CANCEL)
 
         if(!ok) {
+            Timber.tag(TAG).e("Received action event = ${event.action} != action_up or action_cancel. returning...")
             return
         }
 
@@ -335,6 +336,16 @@ internal class R2EpubPageFragment : Fragment() {
                 .withEndAction {
                     bottomLoader.visibility = View.GONE
                 }
+
+            Timber.tag(TAG).d("topProgress: ${_binding?.topProgress?.progress}")
+            if( (_binding?.topProgress?.progress?:0) == 100) {
+                onFlingNavigationCallBack.loadPrevious()
+            }
+
+            Timber.tag(TAG).d("bottomProgress: ${_binding?.bottomProgress?.progress}")
+            if((_binding?.bottomProgress?.progress?:0) == 100 ) {
+                onFlingNavigationCallBack.loadNext()
+            }
 
             _binding?.topProgress?.progress = 0
             _binding?.bottomProgress?.progress = 0
